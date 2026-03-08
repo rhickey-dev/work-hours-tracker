@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Work Hours Tracker</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <!-- Header section -->
+      <header class="app-header">
+        <h1>Work Hours Tracker</h1>
+        <p>Track your daily work time and see your weekly total.</p>
+      </header>
+
+      <!-- Daily time entry form -->
+      <section class="card">
+        <h2>Daily Time Entry</h2>
+
+        <!--
+          The form is handled completely in JavaScript.
+          We never actually send it to a server.
+        -->
+        <form id="entry-form" autocomplete="off">
+          <!-- We keep the current editing entry id here when editing -->
+          <input type="hidden" id="editing-id" />
+
+          <!-- Date -->
+          <div class="form-field">
+            <label for="work-date">Date</label>
+            <input
+              type="date"
+              id="work-date"
+              required
+              aria-describedby="date-help"
+            />
+            <small id="date-help">Defaults to today.</small>
+          </div>
+
+          <!-- Work start / end block -->
+          <div class="form-section">
+            <h3 class="form-section-title">Work time</h3>
+            <div class="form-grid">
+              <div class="form-field">
+                <label for="start-time">Start work</label>
+                <input type="time" id="start-time" required />
+              </div>
+
+              <div class="form-field">
+                <label for="end-time">End work</label>
+                <input type="time" id="end-time" required />
+              </div>
+            </div>
+          </div>
+
+          <!-- Break start / end block -->
+          <div class="form-section">
+            <h3 class="form-section-title">Break (optional)</h3>
+            <div class="form-grid">
+              <div class="form-field">
+                <label for="break-start">Break start</label>
+                <input type="time" id="break-start" />
+              </div>
+
+              <div class="form-field">
+                <label for="break-end">Break end</label>
+                <input type="time" id="break-end" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Live total display -->
+          <div class="total-display" id="form-total-display">
+            Enter all times to see today’s total hours.
+          </div>
+
+          <!-- Validation / error message area -->
+          <p class="form-error" id="form-error" aria-live="polite"></p>
+
+          <!-- Form buttons -->
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save entry</button>
+            <button type="button" id="clear-form" class="btn btn-secondary">
+              Clear form
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Saved entries table -->
+      <section class="card">
+        <div class="card-header">
+          <h2>Saved Entries</h2>
+          <p class="card-subtitle">
+            Your entries are stored only in this browser using local storage.
+          </p>
+        </div>
+
+        <div class="table-wrapper">
+          <table id="entries-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Start</th>
+                <th>Break start</th>
+                <th>Break end</th>
+                <th>End</th>
+                <th>Total</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Rows are injected with JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Weekly total section -->
+      <section class="weekly-summary card">
+        <h2>This Week</h2>
+        <p>
+          Total hours worked this week (Monday–Sunday):
+          <strong id="weekly-total">0h 0m</strong>
+        </p>
+      </section>
+    </div>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>
+
