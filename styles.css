@@ -78,6 +78,17 @@ body {
   flex-direction: column;
 }
 
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.input-row input[type="date"],
+.input-row input[type="time"] {
+  flex: 1 1 auto;
+}
+
 .form-field label {
   font-weight: 600;
   margin-bottom: 0.25rem;
@@ -170,6 +181,11 @@ body {
 
 .btn-danger {
   color: #b91c1c;
+}
+
+.btn-save-field {
+  font-size: 0.8rem;
+  padding: 0.25rem 0.6rem;
 }
 
 /* Table styles */

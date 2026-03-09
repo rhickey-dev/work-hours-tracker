@@ -29,12 +29,21 @@
           <!-- Date -->
           <div class="form-field">
             <label for="work-date">Date</label>
-            <input
-              type="date"
-              id="work-date"
-              required
-              aria-describedby="date-help"
-            />
+            <div class="input-row">
+              <input
+                type="date"
+                id="work-date"
+                required
+                aria-describedby="date-help"
+              />
+              <button
+                type="button"
+                id="save-date"
+                class="btn btn-ghost btn-save-field"
+              >
+                Save
+              </button>
+            </div>
             <small id="date-help">Defaults to today.</small>
           </div>
 
@@ -44,12 +53,30 @@
             <div class="form-grid">
               <div class="form-field">
                 <label for="start-time">Start work</label>
-                <input type="time" id="start-time" required />
+                <div class="input-row">
+                  <input type="time" id="start-time" required />
+                  <button
+                    type="button"
+                    id="save-start-time"
+                    class="btn btn-ghost btn-save-field"
+                  >
+                    Save
+                  </button>
+                </div>
               </div>
 
               <div class="form-field">
                 <label for="end-time">End work</label>
-                <input type="time" id="end-time" required />
+                <div class="input-row">
+                  <input type="time" id="end-time" required />
+                  <button
+                    type="button"
+                    id="save-end-time"
+                    class="btn btn-ghost btn-save-field"
+                  >
+                    Save
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -60,12 +87,30 @@
             <div class="form-grid">
               <div class="form-field">
                 <label for="break-start">Break start</label>
-                <input type="time" id="break-start" />
+                <div class="input-row">
+                  <input type="time" id="break-start" />
+                  <button
+                    type="button"
+                    id="save-break-start"
+                    class="btn btn-ghost btn-save-field"
+                  >
+                    Save
+                  </button>
+                </div>
               </div>
 
               <div class="form-field">
                 <label for="break-end">Break end</label>
-                <input type="time" id="break-end" />
+                <div class="input-row">
+                  <input type="time" id="break-end" />
+                  <button
+                    type="button"
+                    id="save-break-end"
+                    class="btn btn-ghost btn-save-field"
+                  >
+                    Save
+                  </button>
+                </div>
               </div>
             </div>
           </div>
