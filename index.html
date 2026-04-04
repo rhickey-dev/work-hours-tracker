@@ -4,135 +4,147 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Work Hours Tracker</title>
-    <!-- Use a data URI so the browser does not request file:///favicon.ico -->
     <link rel="icon" href="data:," />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div class="app">
-      <!-- Header section -->
       <header class="app-header">
-        <h1>Work Hours Tracker</h1>
-        <p>Track your daily work time and see your weekly total.</p>
+        <p class="app-header__eyebrow">Time tracking</p>
+        <h1 class="app-header__title">Work Hours Tracker</h1>
+        <p class="app-header__lede">
+          Track daily work time and your weekly total. Data stays in this
+          browser.
+        </p>
       </header>
 
-      <!-- Daily time entry form -->
-      <section class="card">
-        <h2>Daily Time Entry</h2>
+      <main class="app-main">
+        <section class="card card--form" aria-labelledby="entry-heading">
+          <div class="card__head">
+            <h2 id="entry-heading" class="card__title">Daily time entry</h2>
+          </div>
 
-        <!--
-          The form is handled completely in JavaScript.
-          We never actually send it to a server.
-        -->
-        <form
-          id="entry-form"
-          autocomplete="off"
-          onsubmit="return false"
+          <form
+            id="entry-form"
+            class="entry-form"
+            autocomplete="off"
+            onsubmit="return false"
+          >
+            <input type="hidden" id="editing-id" />
+
+            <div class="form-field">
+              <label class="form-label" for="work-date">Date</label>
+              <input
+                class="form-input"
+                type="date"
+                id="work-date"
+                required
+                aria-describedby="date-help"
+              />
+              <p class="form-hint" id="date-help">Defaults to today.</p>
+            </div>
+
+            <div class="form-section">
+              <h3 class="form-section__title">Work time</h3>
+              <div class="form-grid">
+                <div class="form-field">
+                  <label class="form-label" for="start-time">Start</label>
+                  <input
+                    class="form-input"
+                    type="time"
+                    id="start-time"
+                    required
+                  />
+                </div>
+                <div class="form-field">
+                  <label class="form-label" for="end-time">End</label>
+                  <input
+                    class="form-input"
+                    type="time"
+                    id="end-time"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <h3 class="form-section__title">Break <span class="form-section__optional">(optional)</span></h3>
+              <div class="form-grid">
+                <div class="form-field">
+                  <label class="form-label" for="break-start">Break start</label>
+                  <input class="form-input" type="time" id="break-start" />
+                </div>
+                <div class="form-field">
+                  <label class="form-label" for="break-end">Break end</label>
+                  <input class="form-input" type="time" id="break-end" />
+                </div>
+              </div>
+            </div>
+
+            <div class="total-display" id="form-total-display" role="status">
+              Enter all times to see today’s total hours.
+            </div>
+
+            <p class="form-error" id="form-error" aria-live="polite"></p>
+
+            <div class="form-actions">
+              <button type="button" id="save-entry-btn" class="btn btn-primary">
+                Save entry
+              </button>
+              <button type="button" id="clear-form" class="btn btn-secondary">
+                Clear form
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <section class="card card--table" aria-labelledby="entries-heading">
+          <div class="card__head">
+            <h2 id="entries-heading" class="card__title">Saved entries</h2>
+            <p class="card__subtitle">
+              Stored locally in your browser only.
+            </p>
+          </div>
+
+          <div class="table-wrapper">
+            <table id="entries-table" class="data-table">
+              <thead>
+                <tr>
+                  <th scope="col">Date</th>
+                  <th scope="col">Start</th>
+                  <th scope="col">Break start</th>
+                  <th scope="col">Break end</th>
+                  <th scope="col">End</th>
+                  <th scope="col">Total</th>
+                  <th scope="col">Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section
+          class="card card--summary weekly-summary"
+          aria-labelledby="week-heading"
         >
-          <!-- We keep the current editing entry id here when editing -->
-          <input type="hidden" id="editing-id" />
-
-          <!-- Date -->
-          <div class="form-field">
-            <label for="work-date">Date</label>
-            <input
-              type="date"
-              id="work-date"
-              required
-              aria-describedby="date-help"
-            />
-            <small id="date-help">Defaults to today.</small>
+          <h2 id="week-heading" class="visually-hidden">This week</h2>
+          <div class="weekly-summary__inner">
+            <p class="weekly-summary__label">This week (Mon–Sun)</p>
+            <p class="weekly-summary__value">
+              <span id="weekly-total" class="weekly-summary__figure">0h 0m</span>
+              <span class="weekly-summary__unit">total</span>
+            </p>
           </div>
-
-          <!-- Work start / end block -->
-          <div class="form-section">
-            <h3 class="form-section-title">Work time</h3>
-            <div class="form-grid">
-              <div class="form-field">
-                <label for="start-time">Start work</label>
-                <input type="time" id="start-time" required />
-              </div>
-
-              <div class="form-field">
-                <label for="end-time">End work</label>
-                <input type="time" id="end-time" required />
-              </div>
-            </div>
-          </div>
-
-          <!-- Break start / end block -->
-          <div class="form-section">
-            <h3 class="form-section-title">Break (optional)</h3>
-            <div class="form-grid">
-              <div class="form-field">
-                <label for="break-start">Break start</label>
-                <input type="time" id="break-start" />
-              </div>
-
-              <div class="form-field">
-                <label for="break-end">Break end</label>
-                <input type="time" id="break-end" />
-              </div>
-            </div>
-          </div>
-
-          <!-- Live total display -->
-          <div class="total-display" id="form-total-display">
-            Enter all times to see today’s total hours.
-          </div>
-
-          <!-- Validation / error message area -->
-          <p class="form-error" id="form-error" aria-live="polite"></p>
-
-          <!-- Form buttons -->
-          <div class="form-actions">
-            <button type="button" id="save-entry-btn" class="btn btn-primary">
-              Save entry
-            </button>
-            <button type="button" id="clear-form" class="btn btn-secondary">
-              Clear form
-            </button>
-          </div>
-        </form>
-      </section>
-
-      <!-- Saved entries table -->
-      <section class="card">
-        <div class="card-header">
-          <h2>Saved Entries</h2>
-          <p class="card-subtitle">
-            Your entries are stored only in this browser using local storage.
-          </p>
-        </div>
-
-        <div class="table-wrapper">
-          <table id="entries-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Start</th>
-                <th>Break start</th>
-                <th>Break end</th>
-                <th>End</th>
-                <th>Total</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- Rows are injected with JavaScript -->
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- Weekly total section -->
-      <section class="weekly-summary card">
-        <h2>This Week</h2>
-        <p>
-          Total hours worked this week (Monday–Sunday):
-          <strong id="weekly-total">0h 0m</strong>
-        </p>
-      </section>
+        </section>
+      </main>
     </div>
 
     <script src="app.js" defer></script>
