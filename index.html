@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Work Hours Tracker</title>
+    <!-- Use a data URI so the browser does not request file:///favicon.ico -->
+    <link rel="icon" href="data:," />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -22,28 +24,23 @@
           The form is handled completely in JavaScript.
           We never actually send it to a server.
         -->
-        <form id="entry-form" autocomplete="off">
+        <form
+          id="entry-form"
+          autocomplete="off"
+          onsubmit="return false"
+        >
           <!-- We keep the current editing entry id here when editing -->
           <input type="hidden" id="editing-id" />
 
           <!-- Date -->
           <div class="form-field">
             <label for="work-date">Date</label>
-            <div class="input-row">
-              <input
-                type="date"
-                id="work-date"
-                required
-                aria-describedby="date-help"
-              />
-              <button
-                type="button"
-                id="save-date"
-                class="btn btn-ghost btn-save-field"
-              >
-                Save
-              </button>
-            </div>
+            <input
+              type="date"
+              id="work-date"
+              required
+              aria-describedby="date-help"
+            />
             <small id="date-help">Defaults to today.</small>
           </div>
 
@@ -53,30 +50,12 @@
             <div class="form-grid">
               <div class="form-field">
                 <label for="start-time">Start work</label>
-                <div class="input-row">
-                  <input type="time" id="start-time" required />
-                  <button
-                    type="button"
-                    id="save-start-time"
-                    class="btn btn-ghost btn-save-field"
-                  >
-                    Save
-                  </button>
-                </div>
+                <input type="time" id="start-time" required />
               </div>
 
               <div class="form-field">
                 <label for="end-time">End work</label>
-                <div class="input-row">
-                  <input type="time" id="end-time" required />
-                  <button
-                    type="button"
-                    id="save-end-time"
-                    class="btn btn-ghost btn-save-field"
-                  >
-                    Save
-                  </button>
-                </div>
+                <input type="time" id="end-time" required />
               </div>
             </div>
           </div>
@@ -87,30 +66,12 @@
             <div class="form-grid">
               <div class="form-field">
                 <label for="break-start">Break start</label>
-                <div class="input-row">
-                  <input type="time" id="break-start" />
-                  <button
-                    type="button"
-                    id="save-break-start"
-                    class="btn btn-ghost btn-save-field"
-                  >
-                    Save
-                  </button>
-                </div>
+                <input type="time" id="break-start" />
               </div>
 
               <div class="form-field">
                 <label for="break-end">Break end</label>
-                <div class="input-row">
-                  <input type="time" id="break-end" />
-                  <button
-                    type="button"
-                    id="save-break-end"
-                    class="btn btn-ghost btn-save-field"
-                  >
-                    Save
-                  </button>
-                </div>
+                <input type="time" id="break-end" />
               </div>
             </div>
           </div>
@@ -125,7 +86,9 @@
 
           <!-- Form buttons -->
           <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Save entry</button>
+            <button type="button" id="save-entry-btn" class="btn btn-primary">
+              Save entry
+            </button>
             <button type="button" id="clear-form" class="btn btn-secondary">
               Clear form
             </button>
@@ -175,4 +138,3 @@
     <script src="app.js" defer></script>
   </body>
 </html>
-

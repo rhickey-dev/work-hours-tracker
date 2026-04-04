@@ -15,14 +15,15 @@ let entries = [];
 // This is the key we use to store data in localStorage.
 const STORAGE_KEY = "workHoursEntries";
 
-// Draft values are stored per field and per work date so they persist when
-// you close the page. Keys look like: workHoursDraft_2025-03-08_startTime
+// Single snapshot of the in-progress form (survives closing the tab or browser).
+const UNFINISHED_DRAFT_KEY = "workHoursUnfinishedDraft";
+
+// Legacy per-field draft keys (older versions); cleared when draft is cleared or migrated.
 const DRAFT_KEY_PREFIX = "workHoursDraft_";
 const LAST_DRAFT_DATE_KEY = "workHoursDraft_lastDate";
-const DRAFT_FIELD_NAMES = ["date", "startTime", "breakStart", "breakEnd", "endTime"];
+const LEGACY_DRAFT_FIELD_NAMES = ["date", "startTime", "breakStart", "breakEnd", "endTime"];
 
-// Build localStorage key for a given work date and field name.
-function getDraftKey(date, fieldName) {
+function getLegacyDraftKey(date, fieldName) {
   return DRAFT_KEY_PREFIX + date + "_" + fieldName;
 }
 
@@ -170,110 +171,131 @@ function saveEntriesToStorage() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
 }
 
-// Maps input element ids to our internal field names for draft keys.
-const INPUT_ID_TO_FIELD = {
-  "work-date": "date",
-  "start-time": "startTime",
-  "break-start": "breakStart",
-  "break-end": "breakEnd",
-  "end-time": "endTime",
-};
+// Current form values + optional edit id, written on every input so reopening
+// the app restores the last unfinished work.
+function persistFormDraftToStorage() {
+  if (!dateInput) return;
 
-// Helper: save one field's value to localStorage. Called when a Save button
-// is clicked. We find the input next to that button and save only its value
-// (e.g. workHoursDraft_2025-03-08_startTime). This ensures each Save button
-// saves only its corresponding field.
-function saveFormDraftToStorage(clickedButton) {
-  if (!dateInput || !clickedButton) return;
-
-  const row = clickedButton.closest(".input-row");
-  if (!row) return;
-
-  const input = row.querySelector("input");
-  if (!input) return;
-
-  const fieldName = INPUT_ID_TO_FIELD[input.id];
-  if (!fieldName) return;
-
-  const value = input.value || "";
-  const date = dateInput.value || getTodayDateString();
-  const key = getDraftKey(date, fieldName);
+  const payload = {
+    date: dateInput.value || getTodayDateString(),
+    startTime: startInput ? startInput.value || "" : "",
+    breakStart: breakStartInput ? breakStartInput.value || "" : "",
+    breakEnd: breakEndInput ? breakEndInput.value || "" : "",
+    endTime: endInput ? endInput.value || "" : "",
+    editingId: editingEntryId,
+  };
 
   try {
-    localStorage.setItem(key, value);
-    localStorage.setItem(LAST_DRAFT_DATE_KEY, date);
-    // Log what we just stored so you can see it in DevTools.
-    console.log("[Draft Save]", {
-      date,
-      fieldName,
-      key,
-      value,
-    });
+    localStorage.setItem(UNFINISHED_DRAFT_KEY, JSON.stringify(payload));
   } catch (error) {
-    console.error("Failed to save form draft:", error);
+    console.error("Failed to save unfinished draft:", error);
   }
 }
 
-// Helper: load saved draft for a given work date into the form.
-// - On page load (no arg): use last-edited date and pre-fill date + all time fields.
-// - When user changes the date (pass that date): pre-fill time fields for that date.
-function loadFormDraftFromStorage(overrideDate) {
-  try {
-    const date =
-      overrideDate != null
-        ? overrideDate
-        : localStorage.getItem(LAST_DRAFT_DATE_KEY) || getTodayDateString();
-
-    console.log("[Draft Load] Using date", date);
-
-    if (dateInput && overrideDate == null) {
-      const savedDateKey = getDraftKey(date, "date");
-      const savedDate = localStorage.getItem(savedDateKey);
-      dateInput.value = savedDate || date;
-      console.log("[Draft Load] date", { key: savedDateKey, value: savedDate });
-    }
-    if (startInput) {
-      const key = getDraftKey(date, "startTime");
-      const v = localStorage.getItem(key);
-      startInput.value = v || "";
-      console.log("[Draft Load] startTime", { key, value: v });
-    }
-    if (breakStartInput) {
-      const key = getDraftKey(date, "breakStart");
-      const v = localStorage.getItem(key);
-      breakStartInput.value = v || "";
-      console.log("[Draft Load] breakStart", { key, value: v });
-    }
-    if (breakEndInput) {
-      const key = getDraftKey(date, "breakEnd");
-      const v = localStorage.getItem(key);
-      breakEndInput.value = v || "";
-      console.log("[Draft Load] breakEnd", { key, value: v });
-    }
-    if (endInput) {
-      const key = getDraftKey(date, "endTime");
-      const v = localStorage.getItem(key);
-      endInput.value = v || "";
-      console.log("[Draft Load] endTime", { key, value: v });
-    }
-  } catch (error) {
-    console.error("Failed to load form draft:", error);
+function clearLegacyDraftKeysForDate(date) {
+  for (const fieldName of LEGACY_DRAFT_FIELD_NAMES) {
+    localStorage.removeItem(getLegacyDraftKey(date, fieldName));
   }
 }
 
-// Helper: remove saved draft values for the given work date (and
-// clear last-edited date if it was this date). Called after "Save entry"
-// or "Clear form" so that draft does not reappear.
+// If the new draft format is empty but old per-field keys exist, merge once
+// into UNFINISHED_DRAFT_KEY and remove the legacy keys.
+function migrateLegacyDraftIfNeeded() {
+  if (localStorage.getItem(UNFINISHED_DRAFT_KEY)) return;
+
+  const lastDate = localStorage.getItem(LAST_DRAFT_DATE_KEY);
+  if (!lastDate) return;
+
+  const legacyDate = localStorage.getItem(getLegacyDraftKey(lastDate, "date"));
+  const legacyStart = localStorage.getItem(getLegacyDraftKey(lastDate, "startTime"));
+  const legacyBreakS = localStorage.getItem(
+    getLegacyDraftKey(lastDate, "breakStart")
+  );
+  const legacyBreakE = localStorage.getItem(
+    getLegacyDraftKey(lastDate, "breakEnd")
+  );
+  const legacyEnd = localStorage.getItem(getLegacyDraftKey(lastDate, "endTime"));
+
+  if (!legacyDate && !legacyStart && !legacyBreakS && !legacyBreakE && !legacyEnd) {
+    return;
+  }
+
+  const savedDate = legacyDate || lastDate;
+  const startTime = legacyStart || "";
+  const breakStart = legacyBreakS || "";
+  const breakEnd = legacyBreakE || "";
+  const endTime = legacyEnd || "";
+
+  try {
+    localStorage.setItem(
+      UNFINISHED_DRAFT_KEY,
+      JSON.stringify({
+        date: savedDate || lastDate,
+        startTime,
+        breakStart,
+        breakEnd,
+        endTime,
+        editingId: null,
+      })
+    );
+  } catch (error) {
+    console.error("Failed to migrate legacy draft:", error);
+    return;
+  }
+
+  localStorage.removeItem(LAST_DRAFT_DATE_KEY);
+  clearLegacyDraftKeysForDate(lastDate);
+}
+
+// Load unfinished draft into the form (after clearForm defaults). Works across
+// days until the user saves the entry or clears the form.
+function loadFormDraftFromStorage() {
+  try {
+    migrateLegacyDraftIfNeeded();
+
+    const raw = localStorage.getItem(UNFINISHED_DRAFT_KEY);
+    if (!raw) return;
+
+    const d = JSON.parse(raw);
+    if (!d || typeof d !== "object") return;
+
+    if (dateInput && typeof d.date === "string" && d.date) {
+      dateInput.value = d.date;
+    }
+    if (startInput && typeof d.startTime === "string") {
+      startInput.value = d.startTime;
+    }
+    if (breakStartInput && typeof d.breakStart === "string") {
+      breakStartInput.value = d.breakStart;
+    }
+    if (breakEndInput && typeof d.breakEnd === "string") {
+      breakEndInput.value = d.breakEnd;
+    }
+    if (endInput && typeof d.endTime === "string") {
+      endInput.value = d.endTime;
+    }
+
+    if (d.editingId && typeof d.editingId === "string") {
+      const exists = entries.some((e) => e.id === d.editingId);
+      if (exists) {
+        editingEntryId = d.editingId;
+        if (editingIdInput) editingIdInput.value = d.editingId;
+      }
+    }
+  } catch (error) {
+    console.error("Failed to load unfinished draft:", error);
+  }
+}
+
+// Called after "Save entry" or "Clear form" so the draft does not reappear.
 function clearFormDraftFromStorage() {
+  localStorage.removeItem(UNFINISHED_DRAFT_KEY);
+  localStorage.removeItem(LAST_DRAFT_DATE_KEY);
+
   const date = dateInput
     ? dateInput.value || getTodayDateString()
     : getTodayDateString();
-  for (const fieldName of DRAFT_FIELD_NAMES) {
-    localStorage.removeItem(getDraftKey(date, fieldName));
-  }
-  if (localStorage.getItem(LAST_DRAFT_DATE_KEY) === date) {
-    localStorage.removeItem(LAST_DRAFT_DATE_KEY);
-  }
+  clearLegacyDraftKeysForDate(date);
 }
 
 // Helper: compute the Monday and Sunday (inclusive) dates for the current week.
@@ -382,6 +404,8 @@ function populateFormFromEntry(entry) {
 
   // On small screens it is helpful to scroll the form into view.
   formElement.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  persistFormDraftToStorage();
 }
 
 // Update the small display under the form with the current calculated total.
@@ -482,9 +506,10 @@ function renderEntriesTable() {
       renderEntriesTable();
       updateWeeklyTotal();
 
-      // If we were editing this entry in the form, clear the form.
+      // If we were editing this entry in the form, clear the form and draft.
       if (editingEntryId === entry.id) {
         clearForm();
+        clearFormDraftFromStorage();
       }
     });
 
@@ -603,43 +628,37 @@ document.addEventListener("DOMContentLoaded", () => {
   entriesTableBody = document.querySelector("#entries-table tbody");
   weeklyTotalElement = document.getElementById("weekly-total");
 
-  // Initialize the form with today's date and default start/end times,
-  // then re-apply any saved draft values from localStorage.
+  // Load saved entries first so restoring an unfinished edit can set editingId.
+  loadEntriesFromStorage();
+
+  // Default the form, then overlay the last unfinished draft (any day).
   clearForm();
   loadFormDraftFromStorage();
   updateFormTotalDisplay();
 
-  // Load any existing entries from localStorage and render them.
-  loadEntriesFromStorage();
   renderEntriesTable();
   updateWeeklyTotal();
 
-  // When the user changes the work date, load that date's saved draft
-  // (if any) into the time fields.
-  dateInput.addEventListener("change", () => {
-    const d = dateInput.value;
-    if (d) loadFormDraftFromStorage(d);
+  const onFormFieldChange = () => {
     updateFormTotalDisplay();
-  });
+    persistFormDraftToStorage();
+  };
 
-  // Whenever a time field changes, update the mini total display
-  // (saving is only done via the small Save buttons).
-  startInput.addEventListener("input", updateFormTotalDisplay);
-  breakStartInput.addEventListener("input", updateFormTotalDisplay);
-  breakEndInput.addEventListener("input", updateFormTotalDisplay);
-  endInput.addEventListener("input", updateFormTotalDisplay);
+  dateInput.addEventListener("change", onFormFieldChange);
+  dateInput.addEventListener("input", onFormFieldChange);
+  startInput.addEventListener("input", onFormFieldChange);
+  breakStartInput.addEventListener("input", onFormFieldChange);
+  breakEndInput.addEventListener("input", onFormFieldChange);
+  endInput.addEventListener("input", onFormFieldChange);
 
-  // Small Save buttons next to each field: when clicked, find the input
-  // in the same row and save only that input's value (not the whole form).
-  formElement.addEventListener("click", (e) => {
-    const btn = e.target.closest(".btn-save-field");
-    if (btn) {
-      saveFormDraftToStorage(btn);
-    }
-  });
-
-  // Handle form submission.
-  formElement.addEventListener("submit", handleFormSubmit);
+  // Handle "Save entry" button click (no form submission, no network requests).
+  const saveEntryBtn = document.getElementById("save-entry-btn");
+  if (saveEntryBtn) {
+    saveEntryBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      handleFormSubmit(e);
+    });
+  }
 
   // Handle the clear button.
   clearFormButton.addEventListener("click", () => {
