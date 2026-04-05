@@ -7,6 +7,7 @@
 // - Rendering the entries table
 // - Showing the total for the current week
 // - Editing and deleting entries
+// - Job site per entry and weekly hours by job site (grouped case-insensitively)
 
 // We keep all entries in an array in memory while the page is open.
 // Each entry is also saved to localStorage so it survives page reloads.
@@ -146,6 +147,17 @@ function formatMinutesAsHoursString(totalMinutes) {
   return `${hours}h ${minutes}m`;
 }
 
+// Trimmed, lowercased key so "Main St" and "main st" count as one job site.
+function normalizeJobSiteKey(raw) {
+  const t = (raw || "").trim();
+  return t ? t.toLowerCase() : "__none__";
+}
+
+function displayJobSiteCell(entry) {
+  const t = (entry.jobSite || "").trim();
+  return t ? t : "—";
+}
+
 // Helper: load entries from localStorage into the `entries` array.
 function loadEntriesFromStorage() {
   try {
@@ -178,6 +190,7 @@ function persistFormDraftToStorage() {
 
   const payload = {
     date: dateInput.value || getTodayDateString(),
+    jobSite: jobSiteInput ? jobSiteInput.value || "" : "",
     startTime: startInput ? startInput.value || "" : "",
     breakStart: breakStartInput ? breakStartInput.value || "" : "",
     breakEnd: breakEndInput ? breakEndInput.value || "" : "",
@@ -274,6 +287,9 @@ function loadFormDraftFromStorage() {
     if (endInput && typeof d.endTime === "string") {
       endInput.value = d.endTime;
     }
+    if (jobSiteInput && typeof d.jobSite === "string") {
+      jobSiteInput.value = d.jobSite;
+    }
 
     if (d.editingId && typeof d.editingId === "string") {
       const exists = entries.some((e) => e.id === d.editingId);
@@ -341,6 +357,10 @@ function getSortedEntries() {
     // Same date, compare start times
     if (a.startTime < b.startTime) return -1;
     if (a.startTime > b.startTime) return 1;
+    const siteCmp = (a.jobSite || "").localeCompare(b.jobSite || "", undefined, {
+      sensitivity: "base",
+    });
+    if (siteCmp !== 0) return siteCmp;
     return 0;
   });
 }
@@ -352,12 +372,21 @@ let startInput;
 let breakStartInput;
 let breakEndInput;
 let endInput;
+let jobSiteInput;
 let formTotalDisplay;
 let formErrorElement;
 let clearFormButton;
 let editingIdInput;
 let entriesTableBody;
 let weeklyTotalElement;
+let weeklyNoSiteTotalElement;
+let weeklyJobSiteListElement;
+
+let deleteConfirmDialog;
+let deleteConfirmYesButton;
+let deleteConfirmNoButton;
+let deletePendingEntry = null;
+let focusElementBeforeDeleteDialog = null;
 
 // Clear all form fields and reset messages.
 // We also:
@@ -372,6 +401,7 @@ function clearForm() {
   breakStartInput.value = "";
   breakEndInput.value = "";
   endInput.value = "17:00";
+  if (jobSiteInput) jobSiteInput.value = "";
   editingEntryId = null;
   editingIdInput.value = "";
   formErrorElement.textContent = "";
@@ -381,6 +411,7 @@ function clearForm() {
 // Put an existing entry back into the form so it can be edited.
 function populateFormFromEntry(entry) {
   dateInput.value = entry.date;
+  if (jobSiteInput) jobSiteInput.value = (entry.jobSite || "").trim();
   startInput.value = entry.startTime;
   breakStartInput.value = entry.breakStart || "";
   breakEndInput.value = entry.breakEnd || "";
@@ -437,6 +468,48 @@ function updateFormTotalDisplay() {
   )}`;
 }
 
+function performEntryDelete(entry) {
+  entries = entries.filter((e) => e.id !== entry.id);
+  saveEntriesToStorage();
+  renderEntriesTable();
+  updateWeeklyTotal();
+  updateWeeklyJobSiteBreakdown();
+
+  if (editingEntryId === entry.id) {
+    clearForm();
+    clearFormDraftFromStorage();
+  }
+}
+
+function closeDeleteConfirmDialog(options = {}) {
+  const restoreFocus = options.restoreFocus !== false;
+  deletePendingEntry = null;
+  if (deleteConfirmDialog) {
+    deleteConfirmDialog.hidden = true;
+  }
+  document.body.classList.remove("delete-dialog-open");
+  if (
+    restoreFocus &&
+    focusElementBeforeDeleteDialog &&
+    typeof focusElementBeforeDeleteDialog.focus === "function"
+  ) {
+    focusElementBeforeDeleteDialog.focus();
+  }
+  focusElementBeforeDeleteDialog = null;
+}
+
+function openDeleteConfirmDialog(entry) {
+  deletePendingEntry = entry;
+  focusElementBeforeDeleteDialog = document.activeElement;
+  if (deleteConfirmDialog) {
+    deleteConfirmDialog.hidden = false;
+  }
+  document.body.classList.add("delete-dialog-open");
+  if (deleteConfirmNoButton) {
+    deleteConfirmNoButton.focus();
+  }
+}
+
 // Render the entries table from the `entries` array.
 function renderEntriesTable() {
   const sorted = getSortedEntries();
@@ -447,7 +520,7 @@ function renderEntriesTable() {
   if (sorted.length === 0) {
     const row = document.createElement("tr");
     const cell = document.createElement("td");
-    cell.colSpan = 7;
+    cell.colSpan = 8;
     cell.textContent = "No entries yet. Add your first one above.";
     row.appendChild(cell);
     entriesTableBody.appendChild(row);
@@ -459,6 +532,10 @@ function renderEntriesTable() {
 
     const dateCell = document.createElement("td");
     dateCell.textContent = entry.date;
+
+    const jobSiteCell = document.createElement("td");
+    jobSiteCell.textContent = displayJobSiteCell(entry);
+    jobSiteCell.className = "data-table__jobsite";
 
     const startCell = document.createElement("td");
     startCell.textContent = formatTimeTo12Hour(entry.startTime);
@@ -496,27 +573,14 @@ function renderEntriesTable() {
     deleteButton.className = "btn btn-ghost btn-danger";
     deleteButton.textContent = "Delete";
     deleteButton.addEventListener("click", () => {
-      const confirmed = window.confirm(
-        "Delete this entry? This cannot be undone."
-      );
-      if (!confirmed) return;
-
-      entries = entries.filter((e) => e.id !== entry.id);
-      saveEntriesToStorage();
-      renderEntriesTable();
-      updateWeeklyTotal();
-
-      // If we were editing this entry in the form, clear the form and draft.
-      if (editingEntryId === entry.id) {
-        clearForm();
-        clearFormDraftFromStorage();
-      }
+      openDeleteConfirmDialog(entry);
     });
 
     actionsCell.appendChild(editButton);
     actionsCell.appendChild(deleteButton);
 
     row.appendChild(dateCell);
+    row.appendChild(jobSiteCell);
     row.appendChild(startCell);
     row.appendChild(breakStartCell);
     row.appendChild(breakEndCell);
@@ -528,21 +592,98 @@ function renderEntriesTable() {
   }
 }
 
-// Calculate and display the total hours for the current week.
+// Calculate and display the total hours for the current week, and hours
+// from entries with no job site (still included in the overall total).
 function updateWeeklyTotal() {
   const { weekStart, weekEnd } = getCurrentWeekBounds();
 
   let totalMinutesThisWeek = 0;
+  let noSiteMinutesThisWeek = 0;
 
   for (const entry of entries) {
     if (entry.date >= weekStart && entry.date <= weekEnd) {
       totalMinutesThisWeek += entry.totalMinutes;
+      if (!(entry.jobSite || "").trim()) {
+        noSiteMinutesThisWeek += entry.totalMinutes;
+      }
     }
   }
 
   weeklyTotalElement.textContent = formatMinutesAsHoursString(
     totalMinutesThisWeek
   );
+
+  if (weeklyNoSiteTotalElement) {
+    weeklyNoSiteTotalElement.textContent = formatMinutesAsHoursString(
+      noSiteMinutesThisWeek
+    );
+  }
+}
+
+// Weekly hours per job site (Mon–Sun), grouped case-insensitively.
+function updateWeeklyJobSiteBreakdown() {
+  if (!weeklyJobSiteListElement) return;
+
+  const { weekStart, weekEnd } = getCurrentWeekBounds();
+  const inWeek = getSortedEntries().filter(
+    (e) => e.date >= weekStart && e.date <= weekEnd
+  );
+
+  /** @type {Map<string, { label: string; minutes: number }>} */
+  const byKey = new Map();
+
+  for (const entry of inWeek) {
+    const trimmed = (entry.jobSite || "").trim();
+    if (!trimmed) continue;
+
+    const key = normalizeJobSiteKey(trimmed);
+    const prev = byKey.get(key);
+    if (prev) {
+      prev.minutes += entry.totalMinutes;
+    } else {
+      byKey.set(key, { label: trimmed, minutes: entry.totalMinutes });
+    }
+  }
+
+  weeklyJobSiteListElement.innerHTML = "";
+
+  if (byKey.size === 0) {
+    const li = document.createElement("li");
+    li.className = "job-site-breakdown__empty";
+    li.textContent =
+      inWeek.length === 0
+        ? "No entries this week."
+        : "No named job sites this week. Hours without a site are included in the weekly total above.";
+    weeklyJobSiteListElement.appendChild(li);
+    return;
+  }
+
+  const rows = Array.from(byKey.entries()).map(([key, data]) => ({
+    key,
+    label: data.label,
+    minutes: data.minutes,
+  }));
+
+  rows.sort((a, b) =>
+    a.label.localeCompare(b.label, undefined, { sensitivity: "base" })
+  );
+
+  for (const row of rows) {
+    const li = document.createElement("li");
+    li.className = "job-site-breakdown__row";
+
+    const name = document.createElement("span");
+    name.className = "job-site-breakdown__name";
+    name.textContent = row.label;
+
+    const time = document.createElement("span");
+    time.className = "job-site-breakdown__time";
+    time.textContent = formatMinutesAsHoursString(row.minutes);
+
+    li.appendChild(name);
+    li.appendChild(time);
+    weeklyJobSiteListElement.appendChild(li);
+  }
 }
 
 // Handle form submission: validate input, update or create an entry,
@@ -552,12 +693,13 @@ function handleFormSubmit(event) {
   formErrorElement.textContent = "";
 
   const date = dateInput.value || getTodayDateString();
+  const jobSite = jobSiteInput ? jobSiteInput.value.trim() : "";
   const start = startInput.value;
   const brkStart = breakStartInput.value;
   const brkEnd = breakEndInput.value;
   const end = endInput.value;
 
-  // Basic validation: date, start, and end are required.
+  // Basic validation: date, start, and end are required; job site is optional.
   if (!date || !start || !end) {
     formErrorElement.textContent =
       "Please enter at least a date, start time, and end time.";
@@ -579,6 +721,7 @@ function handleFormSubmit(event) {
       entries[index] = {
         ...entries[index],
         date,
+        jobSite,
         startTime: start,
         breakStart: brkStart || null,
         breakEnd: brkEnd || null,
@@ -592,6 +735,7 @@ function handleFormSubmit(event) {
       // Use timestamp + random number as a simple unique id.
       id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
       date,
+      jobSite,
       startTime: start,
       breakStart: brkStart || null,
       breakEnd: brkEnd || null,
@@ -606,6 +750,7 @@ function handleFormSubmit(event) {
   saveEntriesToStorage();
   renderEntriesTable();
   updateWeeklyTotal();
+  updateWeeklyJobSiteBreakdown();
 
   // Reset edit mode and optionally keep the date filled with today's date.
   clearForm();
@@ -621,12 +766,46 @@ document.addEventListener("DOMContentLoaded", () => {
   breakStartInput = document.getElementById("break-start");
   breakEndInput = document.getElementById("break-end");
   endInput = document.getElementById("end-time");
+  jobSiteInput = document.getElementById("job-site");
   formTotalDisplay = document.getElementById("form-total-display");
   formErrorElement = document.getElementById("form-error");
   clearFormButton = document.getElementById("clear-form");
   editingIdInput = document.getElementById("editing-id");
   entriesTableBody = document.querySelector("#entries-table tbody");
   weeklyTotalElement = document.getElementById("weekly-total");
+  weeklyNoSiteTotalElement = document.getElementById("weekly-no-site-total");
+  weeklyJobSiteListElement = document.getElementById("weekly-job-site-list");
+
+  deleteConfirmDialog = document.getElementById("delete-confirm-dialog");
+  deleteConfirmYesButton = document.getElementById("delete-confirm-yes");
+  deleteConfirmNoButton = document.getElementById("delete-confirm-no");
+
+  if (deleteConfirmYesButton) {
+    deleteConfirmYesButton.addEventListener("click", () => {
+      const entry = deletePendingEntry;
+      if (!entry) return;
+      closeDeleteConfirmDialog({ restoreFocus: false });
+      performEntryDelete(entry);
+    });
+  }
+  if (deleteConfirmNoButton) {
+    deleteConfirmNoButton.addEventListener("click", () => {
+      closeDeleteConfirmDialog();
+    });
+  }
+  const deleteBackdrop = deleteConfirmDialog?.querySelector(
+    "[data-delete-dialog-dismiss]"
+  );
+  if (deleteBackdrop) {
+    deleteBackdrop.addEventListener("click", () => {
+      closeDeleteConfirmDialog();
+    });
+  }
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    if (!deleteConfirmDialog || deleteConfirmDialog.hidden) return;
+    closeDeleteConfirmDialog();
+  });
 
   // Load saved entries first so restoring an unfinished edit can set editingId.
   loadEntriesFromStorage();
@@ -638,6 +817,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   renderEntriesTable();
   updateWeeklyTotal();
+  updateWeeklyJobSiteBreakdown();
 
   const onFormFieldChange = () => {
     updateFormTotalDisplay();
@@ -650,6 +830,9 @@ document.addEventListener("DOMContentLoaded", () => {
   breakStartInput.addEventListener("input", onFormFieldChange);
   breakEndInput.addEventListener("input", onFormFieldChange);
   endInput.addEventListener("input", onFormFieldChange);
+  if (jobSiteInput) {
+    jobSiteInput.addEventListener("input", onFormFieldChange);
+  }
 
   // Handle "Save entry" button click (no form submission, no network requests).
   const saveEntryBtn = document.getElementById("save-entry-btn");

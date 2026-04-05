@@ -162,6 +162,16 @@ body {
   gap: var(--space-xs);
 }
 
+.form-field--full {
+  margin-top: var(--space-lg);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--color-border);
+}
+
+.form-input::placeholder {
+  color: #9a9a98;
+}
+
 .form-label {
   font-size: var(--text-sm);
   font-weight: 600;
@@ -359,9 +369,17 @@ body {
 
 .data-table {
   width: 100%;
-  min-width: 36rem;
+  min-width: 44rem;
   border-collapse: collapse;
   font-size: var(--text-sm);
+}
+
+.data-table__jobsite {
+  white-space: normal;
+  max-width: 11rem;
+  word-break: break-word;
+  line-height: 1.35;
+  color: var(--color-text);
 }
 
 .data-table thead {
@@ -455,6 +473,156 @@ body {
   font-size: var(--text-sm);
   font-weight: 500;
   color: var(--color-text-muted);
+}
+
+.weekly-summary__no-site {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.35rem var(--space-md);
+  margin: var(--space-md) 0 0;
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-border);
+}
+
+.weekly-summary__no-site-label {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+.weekly-summary__no-site-value {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Weekly breakdown by job site */
+.card--breakdown {
+  padding-top: var(--space-md);
+}
+
+.job-site-breakdown {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+.job-site-breakdown__row {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.job-site-breakdown__row:last-child {
+  border-bottom: none;
+}
+
+.job-site-breakdown__name {
+  font-size: var(--text-base);
+  font-weight: 500;
+  color: var(--color-text);
+  word-break: break-word;
+  min-width: 0;
+  flex: 1;
+}
+
+.job-site-breakdown__time {
+  font-size: var(--text-base);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+  flex-shrink: 0;
+}
+
+.job-site-breakdown__empty {
+  margin: 0;
+  padding: var(--space-md);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+/* Delete confirmation dialog */
+.delete-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-md);
+}
+
+.delete-dialog[hidden] {
+  display: none;
+}
+
+.delete-dialog__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.delete-dialog__panel {
+  position: relative;
+  width: 100%;
+  max-width: 22rem;
+  padding: var(--space-lg);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--color-border);
+}
+
+.delete-dialog__title {
+  margin: 0 0 var(--space-sm);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: -0.02em;
+}
+
+.delete-dialog__message {
+  margin: 0 0 var(--space-lg);
+  font-size: var(--text-base);
+  line-height: 1.5;
+  color: var(--color-text);
+}
+
+.delete-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  justify-content: flex-end;
+}
+
+.delete-dialog__yes {
+  background: var(--color-danger);
+  color: #fff;
+}
+
+.delete-dialog__yes:hover {
+  background: #931c15;
+}
+
+body.delete-dialog-open {
+  overflow: hidden;
 }
 
 .visually-hidden {

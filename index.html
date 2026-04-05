@@ -16,11 +16,10 @@
   <body>
     <div class="app">
       <header class="app-header">
-        <p class="app-header__eyebrow">Time tracking</p>
+        <p class="app-header__eyebrow">Time tracker</p>
         <h1 class="app-header__title">Work Hours Tracker</h1>
         <p class="app-header__lede">
-          Track daily work time and your weekly total. Data stays in this
-          browser.
+          Track daily work time and your weekly total.
         </p>
       </header>
 
@@ -48,6 +47,24 @@
                 aria-describedby="date-help"
               />
               <p class="form-hint" id="date-help">Defaults to today.</p>
+            </div>
+
+            <div class="form-field form-field--full">
+              <label class="form-label" for="job-site">Job site</label>
+              <input
+                class="form-input"
+                type="text"
+                id="job-site"
+                name="job-site"
+                maxlength="200"
+                placeholder="Site name or address (optional)"
+                autocomplete="off"
+                aria-describedby="job-site-help"
+              />
+              <p class="form-hint" id="job-site-help">
+                (Optional) Leave blank to include hours only in the combined weekly
+                total. Named sites are grouped here
+              </p>
             </div>
 
             <div class="form-section">
@@ -118,6 +135,7 @@
               <thead>
                 <tr>
                   <th scope="col">Date</th>
+                  <th scope="col">Job site</th>
                   <th scope="col">Start</th>
                   <th scope="col">Break start</th>
                   <th scope="col">Break end</th>
@@ -143,8 +161,72 @@
               <span class="weekly-summary__unit">total</span>
             </p>
           </div>
+          <div
+            class="weekly-summary__no-site"
+            role="status"
+            aria-live="polite"
+            aria-label="Hours this week with no job site"
+          >
+            <span class="weekly-summary__no-site-label">Hours (no job site listed)</span>
+            <span id="weekly-no-site-total" class="weekly-summary__no-site-value">0h 0m</span>
+          </div>
+        </section>
+
+        <section
+          class="card card--breakdown"
+          aria-labelledby="breakdown-heading"
+        >
+          <div class="card__head">
+            <h2 id="breakdown-heading" class="card__title">
+              This week by job site
+            </h2>
+            <p class="card__subtitle">
+              Hours grouped by job site. Entries with no job site listed
+              are included only in the weekly total above.
+            </p>
+          </div>
+          <ul
+            id="weekly-job-site-list"
+            class="job-site-breakdown"
+            aria-live="polite"
+          ></ul>
         </section>
       </main>
+    </div>
+
+    <div
+      id="delete-confirm-dialog"
+      class="delete-dialog"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="delete-confirm-title"
+    >
+      <div class="delete-dialog__backdrop" data-delete-dialog-dismiss></div>
+      <div class="delete-dialog__panel">
+        <h2 id="delete-confirm-title" class="delete-dialog__title">
+          Delete entry
+        </h2>
+        <p class="delete-dialog__message">
+          Are you sure you want to delete this entry?
+        </p>
+        <div class="delete-dialog__actions">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            id="delete-confirm-no"
+          >
+            No
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary delete-dialog__yes"
+            id="delete-confirm-yes"
+          >
+            Yes
+          </button>
+        </div>
+      </div>
     </div>
 
     <script src="app.js" defer></script>
