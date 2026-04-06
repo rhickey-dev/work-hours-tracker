@@ -5,9 +5,9 @@
 // - Calculating daily hours worked
 // - Saving entries in localStorage
 // - Rendering the entries table
-// - Showing the total for the current week
+// - Showing the total across all saved entries
 // - Editing and deleting entries
-// - Job site per entry and weekly hours by job site (grouped case-insensitively)
+// - Job site per entry and total hours by job site (grouped case-insensitively)
 
 // We keep all entries in an array in memory while the page is open.
 // Each entry is also saved to localStorage so it survives page reloads.
@@ -23,6 +23,213 @@ const UNFINISHED_DRAFT_KEY = "workHoursUnfinishedDraft";
 const DRAFT_KEY_PREFIX = "workHoursDraft_";
 const LAST_DRAFT_DATE_KEY = "workHoursDraft_lastDate";
 const LEGACY_DRAFT_FIELD_NAMES = ["date", "startTime", "breakStart", "breakEnd", "endTime"];
+
+const I18N_STORAGE_KEY = "workHoursAppLang";
+
+const translations = {
+  en: {
+    "meta.title": "Work Hours Tracker",
+    "lang.switcherLabel": "Language",
+    "lang.switcherHint": "Choose interface language",
+    "lang.en": "English",
+    "lang.es": "Español",
+    "header.eyebrow": "Time tracker",
+    "header.title": "Work Hours Tracker",
+    "header.lede": "Track daily work time and your running total.",
+    "entry.heading": "Daily time entry",
+    "form.date": "Date",
+    "form.dateHint": "Defaults to today.",
+    "form.jobSite": "Job site",
+    "form.jobSitePlaceholder": "Site name or address (optional)",
+    "form.jobSiteHelp":
+      "(Optional) Leave blank to include hours only in the combined total. Named sites are grouped below.",
+    "workTime.title": "Work time",
+    "form.start": "Start",
+    "form.end": "End",
+    "break.title": "Break",
+    "break.optional": "(optional)",
+    "break.start": "Break start",
+    "break.end": "Break end",
+    "form.totalPrompt": "Enter all times to see today’s total hours.",
+    "form.totalInvalid": "Check your times above.",
+    "form.totalForDay": "Total for this day: {time}",
+    "form.saveEntry": "Save entry",
+    "form.clearForm": "Clear form",
+    "entries.heading": "Saved entries",
+    "entries.subtitle": "Stored locally in your browser only.",
+    "table.date": "Date",
+    "table.jobSite": "Job site",
+    "table.start": "Start",
+    "table.breakStart": "Break start",
+    "table.breakEnd": "Break end",
+    "table.end": "End",
+    "table.total": "Total",
+    "table.actions": "Actions",
+    "summary.weekHeading": "All saved entries",
+    "summary.allSaved": "All saved entries",
+    "summary.totalUnit": "total",
+    "summary.noSiteAria": "Hours with no job site",
+    "summary.noSiteLabel": "Hours (no job site listed)",
+    "breakdown.title": "All entries by job site",
+    "breakdown.subtitle":
+      "Hours grouped by job site. Entries with no job site listed are included only in the total above.",
+    "dialog.deleteTitle": "Delete entry",
+    "dialog.deleteMessage": "Are you sure you want to delete this entry?",
+    "dialog.no": "No",
+    "dialog.yes": "Yes",
+    "empty.noEntries": "No entries yet. Add your first one above.",
+    "table.edit": "Edit",
+    "table.delete": "Delete",
+    "breakdown.emptyNone": "No entries yet.",
+    "breakdown.emptyNoNamed":
+      "No named job sites yet. Hours without a site are included in the total above.",
+    "errors.needDateStartEnd": "Please enter at least a date, start time, and end time.",
+    "errors.invalidTimeCombination":
+      "The times you entered do not look valid. Please check them.",
+    "time.am": "a.m.",
+    "time.pm": "p.m.",
+    "format.hoursMinutes": "{hours}h {minutes}m",
+    "table.emptyCell": "—",
+    "table.editAria": "Edit this entry",
+    "table.deleteAria": "Delete this entry",
+    "dialog.closeBackdrop": "Close dialog",
+    "breakdown.listAria": "Hours totals grouped by job site",
+    "entries.tableCaption": "Saved work time entries",
+  },
+  es: {
+    "meta.title": "Registro de horas de trabajo",
+    "lang.switcherLabel": "Idioma",
+    "lang.switcherHint": "Elegir idioma de la interfaz",
+    "lang.en": "English",
+    "lang.es": "Español",
+    "header.eyebrow": "Control de tiempo",
+    "header.title": "Registro de horas de trabajo",
+    "header.lede": "Lleva un registro del tiempo diario de trabajo y tu total acumulado.",
+    "entry.heading": "Entrada de tiempo diaria",
+    "form.date": "Fecha",
+    "form.dateHint": "Por defecto es hoy.",
+    "form.jobSite": "Obra / sitio",
+    "form.jobSitePlaceholder": "Nombre del sitio o dirección (opcional)",
+    "form.jobSiteHelp":
+      "(Opcional) Déjalo en blanco para incluir las horas solo en el total combinado. Los sitios con nombre se agrupan abajo.",
+    "workTime.title": "Tiempo de trabajo",
+    "form.start": "Inicio",
+    "form.end": "Fin",
+    "break.title": "Descanso",
+    "break.optional": "(opcional)",
+    "break.start": "Inicio del descanso",
+    "break.end": "Fin del descanso",
+    "form.totalPrompt": "Introduce todas las horas para ver el total del día.",
+    "form.totalInvalid": "Revisa las horas de arriba.",
+    "form.totalForDay": "Total de este día: {time}",
+    "form.saveEntry": "Guardar entrada",
+    "form.clearForm": "Limpiar formulario",
+    "entries.heading": "Entradas guardadas",
+    "entries.subtitle": "Guardado solo en tu navegador.",
+    "table.date": "Fecha",
+    "table.jobSite": "Obra / sitio",
+    "table.start": "Inicio",
+    "table.breakStart": "Inicio desc.",
+    "table.breakEnd": "Fin desc.",
+    "table.end": "Fin",
+    "table.total": "Total",
+    "table.actions": "Acciones",
+    "summary.weekHeading": "Todas las entradas guardadas",
+    "summary.allSaved": "Todas las entradas guardadas",
+    "summary.totalUnit": "total",
+    "summary.noSiteAria": "Horas sin obra indicada",
+    "summary.noSiteLabel": "Horas (sin obra indicada)",
+    "breakdown.title": "Todas las entradas por obra",
+    "breakdown.subtitle":
+      "Horas agrupadas por obra. Las entradas sin obra solo cuentan en el total de arriba.",
+    "dialog.deleteTitle": "Eliminar entrada",
+    "dialog.deleteMessage": "¿Seguro que quieres eliminar esta entrada?",
+    "dialog.no": "No",
+    "dialog.yes": "Sí",
+    "empty.noEntries": "Aún no hay entradas. Añade la primera arriba.",
+    "table.edit": "Editar",
+    "table.delete": "Eliminar",
+    "breakdown.emptyNone": "Aún no hay entradas.",
+    "breakdown.emptyNoNamed":
+      "Aún no hay obras con nombre. Las horas sin obra están en el total de arriba.",
+    "errors.needDateStartEnd":
+      "Introduce al menos la fecha, la hora de inicio y la de fin.",
+    "errors.invalidTimeCombination": "Las horas no parecen válidas. Revísalas.",
+    "time.am": "a. m.",
+    "time.pm": "p. m.",
+    "format.hoursMinutes": "{hours} h {minutes} min",
+    "table.emptyCell": "—",
+    "table.editAria": "Editar esta entrada",
+    "table.deleteAria": "Eliminar esta entrada",
+    "dialog.closeBackdrop": "Cerrar diálogo",
+    "breakdown.listAria": "Totales de horas agrupados por obra",
+    "entries.tableCaption": "Entradas de tiempo de trabajo guardadas",
+  },
+};
+
+let currentLang = "en";
+
+function loadSavedLanguage() {
+  try {
+    const raw = localStorage.getItem(I18N_STORAGE_KEY);
+    if (raw === "en" || raw === "es") return raw;
+  } catch (_) {
+    /* ignore */
+  }
+  return "en";
+}
+
+function saveAppLanguage(lang) {
+  try {
+    localStorage.setItem(I18N_STORAGE_KEY, lang);
+  } catch (_) {
+    /* ignore */
+  }
+}
+
+function t(key, vars = {}) {
+  const table = translations[currentLang] || translations.en;
+  let s = table[key] ?? translations.en[key] ?? key;
+  for (const [k, v] of Object.entries(vars)) {
+    s = s.replaceAll(`{${k}}`, String(v));
+  }
+  return s;
+}
+
+function applyStaticI18n() {
+  document.documentElement.lang = currentLang === "es" ? "es" : "en";
+  document.title = t("meta.title");
+
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    const key = el.getAttribute("data-i18n");
+    if (key) el.textContent = t(key);
+  });
+
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+    const key = el.getAttribute("data-i18n-placeholder");
+    if (key) el.placeholder = t(key);
+  });
+
+  document.querySelectorAll("[data-i18n-aria]").forEach((el) => {
+    const key = el.getAttribute("data-i18n-aria");
+    if (key) el.setAttribute("aria-label", t(key));
+  });
+}
+
+function refreshAllTranslatedUI() {
+  applyStaticI18n();
+  updateFormTotalDisplay({ preserveFormError: true });
+  refreshFormError();
+  renderEntriesTable();
+  updateWeeklyJobSiteBreakdown();
+}
+
+function setAppLanguage(lang) {
+  if (lang !== "en" && lang !== "es") return;
+  currentLang = lang;
+  saveAppLanguage(lang);
+  refreshAllTranslatedUI();
+}
 
 function getLegacyDraftKey(date, fieldName) {
   return DRAFT_KEY_PREFIX + date + "_" + fieldName;
@@ -84,7 +291,7 @@ function formatTimeTo12Hour(timeString) {
     displayHours = 12;
   }
 
-  const suffix = isPM ? "p.m." : "a.m.";
+  const suffix = isPM ? t("time.pm") : t("time.am");
   return `${displayHours}:${minutes} ${suffix}`;
 }
 
@@ -144,18 +351,18 @@ function calculateTotalMinutes(startStr, breakStartStr, breakEndStr, endStr) {
 function formatMinutesAsHoursString(totalMinutes) {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
-  return `${hours}h ${minutes}m`;
+  return t("format.hoursMinutes", { hours, minutes });
 }
 
 // Trimmed, lowercased key so "Main St" and "main st" count as one job site.
 function normalizeJobSiteKey(raw) {
-  const t = (raw || "").trim();
-  return t ? t.toLowerCase() : "__none__";
+  const trimmed = (raw || "").trim();
+  return trimmed ? trimmed.toLowerCase() : "__none__";
 }
 
 function displayJobSiteCell(entry) {
-  const t = (entry.jobSite || "").trim();
-  return t ? t : "—";
+  const site = (entry.jobSite || "").trim();
+  return site ? site : t("table.emptyCell");
 }
 
 // Helper: load entries from localStorage into the `entries` array.
@@ -314,39 +521,6 @@ function clearFormDraftFromStorage() {
   clearLegacyDraftKeysForDate(date);
 }
 
-// Helper: compute the Monday and Sunday (inclusive) dates for the current week.
-// Returns an object with:
-// - weekStart: "YYYY-MM-DD" for Monday
-// - weekEnd: "YYYY-MM-DD" for Sunday
-function getCurrentWeekBounds() {
-  const today = new Date();
-
-  // JS getDay(): 0 = Sunday, 1 = Monday, ... 6 = Saturday
-  const jsDay = today.getDay();
-
-  // We want Monday as 0, Tuesday as 1, ..., Sunday as 6.
-  const mondayBasedIndex = (jsDay + 6) % 7;
-
-  // Clone the date so we do not change the original `today`.
-  const monday = new Date(today);
-  monday.setDate(today.getDate() - mondayBasedIndex);
-
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-
-  const format = (d) => {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
-  };
-
-  return {
-    weekStart: format(monday),
-    weekEnd: format(sunday),
-  };
-}
-
 // Helper: sort entries by date (and by start time within the same date)
 function getSortedEntries() {
   // We do not want to mutate the original `entries` array in place here,
@@ -388,6 +562,21 @@ let deleteConfirmNoButton;
 let deletePendingEntry = null;
 let focusElementBeforeDeleteDialog = null;
 
+let formErrorKey = null;
+
+function setFormError(key) {
+  formErrorKey = key;
+  if (formErrorElement) {
+    formErrorElement.textContent = key ? t(key) : "";
+  }
+}
+
+function refreshFormError() {
+  if (formErrorElement) {
+    formErrorElement.textContent = formErrorKey ? t(formErrorKey) : "";
+  }
+}
+
 // Clear all form fields and reset messages.
 // We also:
 // - reset the date to today
@@ -404,7 +593,7 @@ function clearForm() {
   if (jobSiteInput) jobSiteInput.value = "";
   editingEntryId = null;
   editingIdInput.value = "";
-  formErrorElement.textContent = "";
+  setFormError(null);
   updateFormTotalDisplay();
 }
 
@@ -418,7 +607,7 @@ function populateFormFromEntry(entry) {
   endInput.value = entry.endTime;
   editingEntryId = entry.id;
   editingIdInput.value = entry.id;
-  formErrorElement.textContent = "";
+  setFormError(null);
 
   // Recalculate and display this entry's total.
   const minutes = calculateTotalMinutes(
@@ -428,9 +617,9 @@ function populateFormFromEntry(entry) {
     entry.endTime
   );
   if (minutes !== null) {
-    formTotalDisplay.textContent = `Total for this day: ${formatMinutesAsHoursString(
-      minutes
-    )}`;
+    formTotalDisplay.textContent = t("form.totalForDay", {
+      time: formatMinutesAsHoursString(minutes),
+    });
   }
 
   // On small screens it is helpful to scroll the form into view.
@@ -441,8 +630,10 @@ function populateFormFromEntry(entry) {
 
 // Update the small display under the form with the current calculated total.
 // This runs whenever the user changes one of the time fields.
-function updateFormTotalDisplay() {
-  formErrorElement.textContent = "";
+function updateFormTotalDisplay(options = {}) {
+  if (!options.preserveFormError) {
+    setFormError(null);
+  }
 
   const start = startInput.value;
   const brkStart = breakStartInput.value;
@@ -451,21 +642,20 @@ function updateFormTotalDisplay() {
 
   // Only show a calculation when at least start and end are filled.
   if (!start || !end) {
-    formTotalDisplay.textContent =
-      "Enter all times to see today’s total hours.";
+    formTotalDisplay.textContent = t("form.totalPrompt");
     return;
   }
 
   const minutes = calculateTotalMinutes(start, brkStart, brkEnd, end);
 
   if (minutes === null) {
-    formTotalDisplay.textContent = "Check your times above.";
+    formTotalDisplay.textContent = t("form.totalInvalid");
     return;
   }
 
-  formTotalDisplay.textContent = `Total for this day: ${formatMinutesAsHoursString(
-    minutes
-  )}`;
+  formTotalDisplay.textContent = t("form.totalForDay", {
+    time: formatMinutesAsHoursString(minutes),
+  });
 }
 
 function performEntryDelete(entry) {
@@ -521,7 +711,7 @@ function renderEntriesTable() {
     const row = document.createElement("tr");
     const cell = document.createElement("td");
     cell.colSpan = 8;
-    cell.textContent = "No entries yet. Add your first one above.";
+    cell.textContent = t("empty.noEntries");
     row.appendChild(cell);
     entriesTableBody.appendChild(row);
     return;
@@ -543,12 +733,12 @@ function renderEntriesTable() {
     const breakStartCell = document.createElement("td");
     breakStartCell.textContent = entry.breakStart
       ? formatTimeTo12Hour(entry.breakStart)
-      : "-";
+      : t("table.emptyCell");
 
     const breakEndCell = document.createElement("td");
     breakEndCell.textContent = entry.breakEnd
       ? formatTimeTo12Hour(entry.breakEnd)
-      : "-";
+      : t("table.emptyCell");
 
     const endCell = document.createElement("td");
     endCell.textContent = formatTimeTo12Hour(entry.endTime);
@@ -562,7 +752,8 @@ function renderEntriesTable() {
     const editButton = document.createElement("button");
     editButton.type = "button";
     editButton.className = "btn btn-ghost";
-    editButton.textContent = "Edit";
+    editButton.textContent = t("table.edit");
+    editButton.setAttribute("aria-label", t("table.editAria"));
     editButton.addEventListener("click", () => {
       populateFormFromEntry(entry);
     });
@@ -571,7 +762,8 @@ function renderEntriesTable() {
     const deleteButton = document.createElement("button");
     deleteButton.type = "button";
     deleteButton.className = "btn btn-ghost btn-danger";
-    deleteButton.textContent = "Delete";
+    deleteButton.textContent = t("table.delete");
+    deleteButton.setAttribute("aria-label", t("table.deleteAria"));
     deleteButton.addEventListener("click", () => {
       openDeleteConfirmDialog(entry);
     });
@@ -592,47 +784,36 @@ function renderEntriesTable() {
   }
 }
 
-// Calculate and display the total hours for the current week, and hours
+// Calculate and display the total hours across all saved entries, and hours
 // from entries with no job site (still included in the overall total).
 function updateWeeklyTotal() {
-  const { weekStart, weekEnd } = getCurrentWeekBounds();
-
-  let totalMinutesThisWeek = 0;
-  let noSiteMinutesThisWeek = 0;
+  let totalMinutes = 0;
+  let noSiteMinutes = 0;
 
   for (const entry of entries) {
-    if (entry.date >= weekStart && entry.date <= weekEnd) {
-      totalMinutesThisWeek += entry.totalMinutes;
-      if (!(entry.jobSite || "").trim()) {
-        noSiteMinutesThisWeek += entry.totalMinutes;
-      }
+    totalMinutes += entry.totalMinutes;
+    if (!(entry.jobSite || "").trim()) {
+      noSiteMinutes += entry.totalMinutes;
     }
   }
 
-  weeklyTotalElement.textContent = formatMinutesAsHoursString(
-    totalMinutesThisWeek
-  );
+  weeklyTotalElement.textContent = formatMinutesAsHoursString(totalMinutes);
 
   if (weeklyNoSiteTotalElement) {
-    weeklyNoSiteTotalElement.textContent = formatMinutesAsHoursString(
-      noSiteMinutesThisWeek
-    );
+    weeklyNoSiteTotalElement.textContent =
+      formatMinutesAsHoursString(noSiteMinutes);
   }
 }
 
-// Weekly hours per job site (Mon–Sun), grouped case-insensitively.
+// Total hours per job site across all saved entries, grouped case-insensitively.
 function updateWeeklyJobSiteBreakdown() {
   if (!weeklyJobSiteListElement) return;
-
-  const { weekStart, weekEnd } = getCurrentWeekBounds();
-  const inWeek = getSortedEntries().filter(
-    (e) => e.date >= weekStart && e.date <= weekEnd
-  );
+  const allEntries = getSortedEntries();
 
   /** @type {Map<string, { label: string; minutes: number }>} */
   const byKey = new Map();
 
-  for (const entry of inWeek) {
+  for (const entry of allEntries) {
     const trimmed = (entry.jobSite || "").trim();
     if (!trimmed) continue;
 
@@ -651,9 +832,9 @@ function updateWeeklyJobSiteBreakdown() {
     const li = document.createElement("li");
     li.className = "job-site-breakdown__empty";
     li.textContent =
-      inWeek.length === 0
-        ? "No entries this week."
-        : "No named job sites this week. Hours without a site are included in the weekly total above.";
+      allEntries.length === 0
+        ? t("breakdown.emptyNone")
+        : t("breakdown.emptyNoNamed");
     weeklyJobSiteListElement.appendChild(li);
     return;
   }
@@ -690,7 +871,7 @@ function updateWeeklyJobSiteBreakdown() {
 // save to localStorage, and re-render everything.
 function handleFormSubmit(event) {
   event.preventDefault();
-  formErrorElement.textContent = "";
+  setFormError(null);
 
   const date = dateInput.value || getTodayDateString();
   const jobSite = jobSiteInput ? jobSiteInput.value.trim() : "";
@@ -701,16 +882,14 @@ function handleFormSubmit(event) {
 
   // Basic validation: date, start, and end are required; job site is optional.
   if (!date || !start || !end) {
-    formErrorElement.textContent =
-      "Please enter at least a date, start time, and end time.";
+    setFormError("errors.needDateStartEnd");
     return;
   }
 
   const totalMinutes = calculateTotalMinutes(start, brkStart, brkEnd, end);
 
   if (totalMinutes === null) {
-    formErrorElement.textContent =
-      "The times you entered do not look valid. Please check them.";
+    setFormError("errors.invalidTimeCombination");
     return;
   }
 
@@ -779,6 +958,16 @@ document.addEventListener("DOMContentLoaded", () => {
   deleteConfirmDialog = document.getElementById("delete-confirm-dialog");
   deleteConfirmYesButton = document.getElementById("delete-confirm-yes");
   deleteConfirmNoButton = document.getElementById("delete-confirm-no");
+
+  currentLang = loadSavedLanguage();
+  const langSelect = document.getElementById("lang-select");
+  if (langSelect) {
+    langSelect.value = currentLang;
+    langSelect.addEventListener("change", () => {
+      setAppLanguage(langSelect.value);
+    });
+  }
+  applyStaticI18n();
 
   if (deleteConfirmYesButton) {
     deleteConfirmYesButton.addEventListener("click", () => {
@@ -849,5 +1038,4 @@ document.addEventListener("DOMContentLoaded", () => {
     clearFormDraftFromStorage();
   });
 });
-
 
