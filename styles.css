@@ -205,6 +205,57 @@ body {
   margin-bottom: var(--space-md);
 }
 
+.card__head--entries {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.card__head--entries .card__head__text {
+  flex: 1;
+  min-width: min(100%, 12rem);
+}
+
+.entries-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+}
+
+.btn-export {
+  flex-shrink: 0;
+  align-self: flex-start;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.9rem;
+  font-size: var(--text-sm);
+}
+
+.btn-delete-all {
+  flex-shrink: 0;
+  align-self: flex-start;
+  background: var(--color-danger);
+  color: #fff;
+  border: 1px solid transparent;
+}
+
+.btn-delete-all:hover:not(:disabled) {
+  background: #931c15;
+  color: #fff;
+}
+
+.btn-delete-all:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(180, 35, 24, 0.35);
+}
+
+.btn-delete-all:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 /* Form */
 .entry-form {
   display: flex;

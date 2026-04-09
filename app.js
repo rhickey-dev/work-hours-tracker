@@ -57,6 +57,8 @@ const translations = {
     "form.clearForm": "Clear form",
     "entries.heading": "Saved entries",
     "entries.subtitle": "Stored locally in your browser only.",
+    "entries.export": "Export entries",
+    "entries.deleteAll": "Delete all entries",
     "table.date": "Date",
     "table.jobSite": "Job site",
     "table.start": "Start",
@@ -65,6 +67,13 @@ const translations = {
     "table.end": "End",
     "table.total": "Total",
     "table.actions": "Actions",
+    "csv.headerDate": "Date",
+    "csv.headerJobSite": "Job Site",
+    "csv.headerStart": "Start",
+    "csv.headerBreakStart": "Break Start",
+    "csv.headerBreakEnd": "Break End",
+    "csv.headerEnd": "End",
+    "csv.headerTotal": "Total",
     "summary.weekHeading": "All saved entries",
     "summary.allSaved": "All saved entries",
     "summary.totalUnit": "total",
@@ -75,6 +84,9 @@ const translations = {
       "Hours grouped by job site. Entries with no job site listed are included only in the total above.",
     "dialog.deleteTitle": "Delete entry",
     "dialog.deleteMessage": "Are you sure you want to delete this entry?",
+    "dialog.deleteAllTitle": "Delete all entries?",
+    "dialog.deleteAllMessage":
+      "This removes every saved entry from this browser. This cannot be undone.",
     "dialog.no": "No",
     "dialog.yes": "Yes",
     "empty.noEntries": "No entries yet. Add your first one above.",
@@ -126,6 +138,8 @@ const translations = {
     "form.clearForm": "Limpiar formulario",
     "entries.heading": "Entradas guardadas",
     "entries.subtitle": "Guardado solo en tu navegador.",
+    "entries.export": "Exportar entradas",
+    "entries.deleteAll": "Eliminar todas las entradas",
     "table.date": "Fecha",
     "table.jobSite": "Obra / sitio",
     "table.start": "Inicio",
@@ -134,6 +148,13 @@ const translations = {
     "table.end": "Fin",
     "table.total": "Total",
     "table.actions": "Acciones",
+    "csv.headerDate": "Fecha",
+    "csv.headerJobSite": "Obra / sitio",
+    "csv.headerStart": "Inicio",
+    "csv.headerBreakStart": "Inicio desc.",
+    "csv.headerBreakEnd": "Fin desc.",
+    "csv.headerEnd": "Fin",
+    "csv.headerTotal": "Total",
     "summary.weekHeading": "Todas las entradas guardadas",
     "summary.allSaved": "Todas las entradas guardadas",
     "summary.totalUnit": "total",
@@ -144,6 +165,9 @@ const translations = {
       "Horas agrupadas por obra. Las entradas sin obra solo cuentan en el total de arriba.",
     "dialog.deleteTitle": "Eliminar entrada",
     "dialog.deleteMessage": "¿Seguro que quieres eliminar esta entrada?",
+    "dialog.deleteAllTitle": "¿Eliminar todas las entradas?",
+    "dialog.deleteAllMessage":
+      "Se borrarán todas las entradas guardadas en este navegador. No se puede deshacer.",
     "dialog.no": "No",
     "dialog.yes": "Sí",
     "empty.noEntries": "Aún no hay entradas. Añade la primera arriba.",
@@ -557,10 +581,15 @@ let weeklyNoSiteTotalElement;
 let weeklyJobSiteListElement;
 
 let deleteConfirmDialog;
+let deleteConfirmTitleElement;
+let deleteConfirmMessageElement;
 let deleteConfirmYesButton;
 let deleteConfirmNoButton;
 let deletePendingEntry = null;
+let deleteAllPending = false;
 let focusElementBeforeDeleteDialog = null;
+let deleteAllEntriesButton;
+let exportEntriesButton;
 
 let formErrorKey = null;
 
@@ -671,9 +700,29 @@ function performEntryDelete(entry) {
   }
 }
 
+function performDeleteAllEntries() {
+  entries = [];
+  saveEntriesToStorage();
+  editingEntryId = null;
+  if (editingIdInput) editingIdInput.value = "";
+  clearForm();
+  clearFormDraftFromStorage();
+  renderEntriesTable();
+  updateWeeklyTotal();
+  updateWeeklyJobSiteBreakdown();
+  updateFormTotalDisplay();
+  if (formElement && dateInput) {
+    formElement.scrollIntoView({ behavior: "smooth", block: "start" });
+    requestAnimationFrame(() => {
+      dateInput.focus();
+    });
+  }
+}
+
 function closeDeleteConfirmDialog(options = {}) {
   const restoreFocus = options.restoreFocus !== false;
   deletePendingEntry = null;
+  deleteAllPending = false;
   if (deleteConfirmDialog) {
     deleteConfirmDialog.hidden = true;
   }
@@ -689,7 +738,14 @@ function closeDeleteConfirmDialog(options = {}) {
 }
 
 function openDeleteConfirmDialog(entry) {
+  deleteAllPending = false;
   deletePendingEntry = entry;
+  if (deleteConfirmTitleElement) {
+    deleteConfirmTitleElement.textContent = t("dialog.deleteTitle");
+  }
+  if (deleteConfirmMessageElement) {
+    deleteConfirmMessageElement.textContent = t("dialog.deleteMessage");
+  }
   focusElementBeforeDeleteDialog = document.activeElement;
   if (deleteConfirmDialog) {
     deleteConfirmDialog.hidden = false;
@@ -698,6 +754,91 @@ function openDeleteConfirmDialog(entry) {
   if (deleteConfirmNoButton) {
     deleteConfirmNoButton.focus();
   }
+}
+
+function openDeleteAllConfirmDialog() {
+  if (entries.length === 0) return;
+  deleteAllPending = true;
+  deletePendingEntry = null;
+  if (deleteConfirmTitleElement) {
+    deleteConfirmTitleElement.textContent = t("dialog.deleteAllTitle");
+  }
+  if (deleteConfirmMessageElement) {
+    deleteConfirmMessageElement.textContent = t("dialog.deleteAllMessage");
+  }
+  focusElementBeforeDeleteDialog = document.activeElement;
+  if (deleteConfirmDialog) {
+    deleteConfirmDialog.hidden = false;
+  }
+  document.body.classList.add("delete-dialog-open");
+  if (deleteConfirmNoButton) {
+    deleteConfirmNoButton.focus();
+  }
+}
+
+function syncDeleteAllButtonState() {
+  if (!deleteAllEntriesButton) return;
+  deleteAllEntriesButton.disabled = entries.length === 0;
+}
+
+function syncExportButtonState() {
+  if (!exportEntriesButton) return;
+  exportEntriesButton.disabled = entries.length === 0;
+}
+
+function escapeCsvCell(value) {
+  const text = value == null ? "" : String(value);
+  if (/[",\n]/.test(text)) {
+    return `"${text.replaceAll('"', '""')}"`;
+  }
+  return text;
+}
+
+function buildExportCsv() {
+  const sorted = getSortedEntries();
+  const header = [
+    t("csv.headerDate"),
+    t("csv.headerJobSite"),
+    t("csv.headerStart"),
+    t("csv.headerBreakStart"),
+    t("csv.headerBreakEnd"),
+    t("csv.headerEnd"),
+    t("csv.headerTotal"),
+  ];
+
+  const rows = sorted.map((entry) => [
+    entry.date,
+    displayJobSiteCell(entry),
+    formatTimeTo12Hour(entry.startTime),
+    entry.breakStart ? formatTimeTo12Hour(entry.breakStart) : t("table.emptyCell"),
+    entry.breakEnd ? formatTimeTo12Hour(entry.breakEnd) : t("table.emptyCell"),
+    formatTimeTo12Hour(entry.endTime),
+    formatMinutesAsHoursString(entry.totalMinutes),
+  ]);
+
+  return [header, ...rows]
+    .map((row) => row.map(escapeCsvCell).join(","))
+    .join("\n");
+}
+
+function exportEntriesAsCsv() {
+  if (entries.length === 0) return;
+
+  const csv = buildExportCsv();
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const today = getTodayDateString();
+
+  link.href = url;
+  link.download = `work-hours-export-${today}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 0);
 }
 
 // Render the entries table from the `entries` array.
@@ -714,6 +855,8 @@ function renderEntriesTable() {
     cell.textContent = t("empty.noEntries");
     row.appendChild(cell);
     entriesTableBody.appendChild(row);
+    syncDeleteAllButtonState();
+    syncExportButtonState();
     return;
   }
 
@@ -782,6 +925,8 @@ function renderEntriesTable() {
 
     entriesTableBody.appendChild(row);
   }
+  syncDeleteAllButtonState();
+  syncExportButtonState();
 }
 
 // Calculate and display the total hours across all saved entries, and hours
@@ -956,8 +1101,12 @@ document.addEventListener("DOMContentLoaded", () => {
   weeklyJobSiteListElement = document.getElementById("weekly-job-site-list");
 
   deleteConfirmDialog = document.getElementById("delete-confirm-dialog");
+  deleteConfirmTitleElement = document.getElementById("delete-confirm-title");
+  deleteConfirmMessageElement = document.getElementById("delete-confirm-message");
   deleteConfirmYesButton = document.getElementById("delete-confirm-yes");
   deleteConfirmNoButton = document.getElementById("delete-confirm-no");
+  deleteAllEntriesButton = document.getElementById("delete-all-entries-btn");
+  exportEntriesButton = document.getElementById("export-entries-btn");
 
   currentLang = loadSavedLanguage();
   const langSelect = document.getElementById("lang-select");
@@ -971,6 +1120,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (deleteConfirmYesButton) {
     deleteConfirmYesButton.addEventListener("click", () => {
+      if (deleteAllPending) {
+        closeDeleteConfirmDialog({ restoreFocus: false });
+        performDeleteAllEntries();
+        return;
+      }
       const entry = deletePendingEntry;
       if (!entry) return;
       closeDeleteConfirmDialog({ restoreFocus: false });
@@ -1037,5 +1191,16 @@ document.addEventListener("DOMContentLoaded", () => {
     clearForm();
     clearFormDraftFromStorage();
   });
-});
 
+  if (deleteAllEntriesButton) {
+    deleteAllEntriesButton.addEventListener("click", () => {
+      openDeleteAllConfirmDialog();
+    });
+  }
+
+  if (exportEntriesButton) {
+    exportEntriesButton.addEventListener("click", () => {
+      exportEntriesAsCsv();
+    });
+  }
+});
