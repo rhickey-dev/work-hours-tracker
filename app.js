@@ -57,8 +57,7 @@ const translations = {
     "form.clearForm": "Clear form",
     "entries.heading": "Saved entries",
     "entries.subtitle": "Stored locally in your browser only.",
-    "entries.exportPdf": "Export PDF",
-    "entries.exportCsv": "CSV",
+    "entries.export": "Export",
     "entries.deleteAll": "Delete all entries",
     "table.date": "Date",
     "table.jobSite": "Job site",
@@ -68,13 +67,6 @@ const translations = {
     "table.end": "End",
     "table.total": "Total",
     "table.actions": "Actions",
-    "csv.headerDate": "Date",
-    "csv.headerJobSite": "Job Site",
-    "csv.headerStart": "Start",
-    "csv.headerBreakStart": "Break Start",
-    "csv.headerBreakEnd": "Break End",
-    "csv.headerEnd": "End",
-    "csv.headerTotal": "Total",
     "summary.weekHeading": "All saved entries",
     "summary.allSaved": "All saved entries",
     "summary.totalUnit": "total",
@@ -117,93 +109,86 @@ const translations = {
     "pdf.noJobSite": "No job site listed",
   },
   es: {
-    "meta.title": "Registro de horas de trabajo",
-    "lang.switcherLabel": "Idioma",
-    "lang.switcherHint": "Elegir idioma de la interfaz",
+    "meta.title": "Work Hours Tracker",
+    "lang.switcherLabel": "Language",
+    "lang.switcherHint": "Choose interface language",
     "lang.en": "English",
     "lang.es": "Español",
-    "header.eyebrow": "Control de tiempo",
-    "header.title": "Registro de horas de trabajo",
-    "header.lede": "Lleva un registro del tiempo diario de trabajo y tu total acumulado.",
-    "entry.heading": "Entrada de tiempo diaria",
-    "form.date": "Fecha",
-    "form.dateHint": "Por defecto es hoy.",
-    "form.jobSite": "Obra / sitio",
-    "form.jobSitePlaceholder": "Nombre del sitio o dirección (opcional)",
+    "header.eyebrow": "Time tracker",
+    "header.title": "Work Hours Tracker",
+    "header.lede": "Track daily work time and your running total.",
+    "entry.heading": "Daily time entry",
+    "form.date": "Date",
+    "form.dateHint": "Defaults to today.",
+    "form.jobSite": "Job site",
+    "form.jobSitePlaceholder": "Site name or address (optional)",
     "form.jobSiteHelp":
-      "(Opcional) Déjalo en blanco para incluir las horas solo en el total combinado. Los sitios con nombre se agrupan abajo.",
-    "workTime.title": "Tiempo de trabajo",
-    "form.start": "Inicio",
-    "form.end": "Fin",
-    "break.title": "Descanso",
-    "break.optional": "(opcional)",
-    "break.start": "Inicio del descanso",
-    "break.end": "Fin del descanso",
-    "form.totalPrompt": "Introduce todas las horas para ver el total del día.",
-    "form.totalInvalid": "Revisa las horas de arriba.",
-    "form.totalForDay": "Total de este día: {time}",
-    "form.saveEntry": "Guardar entrada",
-    "form.clearForm": "Limpiar formulario",
-    "entries.heading": "Entradas guardadas",
-    "entries.subtitle": "Guardado solo en tu navegador.",
-    "entries.exportPdf": "Exportar PDF",
-    "entries.exportCsv": "CSV",
-    "entries.deleteAll": "Eliminar todas las entradas",
-    "table.date": "Fecha",
-    "table.jobSite": "Obra / sitio",
-    "table.start": "Inicio",
-    "table.breakStart": "Inicio desc.",
-    "table.breakEnd": "Fin desc.",
-    "table.end": "Fin",
+      "(Optional) Leave blank to include hours only in the combined total. Named sites are grouped below.",
+    "workTime.title": "Work time",
+    "form.start": "Start",
+    "form.end": "End",
+    "break.title": "Break",
+    "break.optional": "(optional)",
+    "break.start": "Break start",
+    "break.end": "Break end",
+    "form.totalPrompt": "Enter all times to see today’s total hours.",
+    "form.totalInvalid": "Check your times above.",
+    "form.totalForDay": "Total for this day: {time}",
+    "form.saveEntry": "Save entry",
+    "form.clearForm": "Clear form",
+    "entries.heading": "Saved entries",
+    "entries.subtitle": "Stored locally in your browser only.",
+    "entries.export": "Export",
+    "entries.deleteAll": "Delete all entries",
+    "table.date": "Date",
+    "table.jobSite": "Job site",
+    "table.start": "Start",
+    "table.breakStart": "Break start",
+    "table.breakEnd": "Break end",
+    "table.end": "End",
     "table.total": "Total",
-    "table.actions": "Acciones",
-    "csv.headerDate": "Fecha",
-    "csv.headerJobSite": "Obra / sitio",
-    "csv.headerStart": "Inicio",
-    "csv.headerBreakStart": "Inicio desc.",
-    "csv.headerBreakEnd": "Fin desc.",
-    "csv.headerEnd": "Fin",
-    "csv.headerTotal": "Total",
-    "summary.weekHeading": "Todas las entradas guardadas",
-    "summary.allSaved": "Todas las entradas guardadas",
+    "table.actions": "Actions",
+    "summary.weekHeading": "All saved entries",
+    "summary.allSaved": "All saved entries",
     "summary.totalUnit": "total",
-    "summary.noSiteAria": "Horas sin obra indicada",
-    "summary.noSiteLabel": "Horas (sin obra indicada)",
-    "breakdown.title": "Todas las entradas por obra",
+    "summary.noSiteAria": "Hours with no job site",
+    "summary.noSiteLabel": "Hours (no job site listed)",
+    "breakdown.title": "All entries by job site",
     "breakdown.subtitle":
-      "Horas agrupadas por obra. Las entradas sin obra solo cuentan en el total de arriba.",
-    "dialog.deleteTitle": "Eliminar entrada",
-    "dialog.deleteMessage": "¿Seguro que quieres eliminar esta entrada?",
-    "dialog.deleteAllTitle": "¿Eliminar todas las entradas?",
+      "Hours grouped by job site. Entries with no job site listed are included only in the total above.",
+    "dialog.deleteTitle": "Delete entry",
+    "dialog.deleteMessage": "Are you sure you want to delete this entry?",
+    "dialog.deleteAllTitle": "Delete all entries?",
     "dialog.deleteAllMessage":
-      "Se borrarán todas las entradas guardadas en este navegador. No se puede deshacer.",
+      "This removes every saved entry from this browser. This cannot be undone.",
     "dialog.no": "No",
-    "dialog.yes": "Sí",
-    "empty.noEntries": "Aún no hay entradas. Añade la primera arriba.",
-    "table.edit": "Editar",
-    "table.delete": "Eliminar",
-    "breakdown.emptyNone": "Aún no hay entradas.",
+    "dialog.yes": "Yes",
+    "empty.noEntries": "No entries yet. Add your first one above.",
+    "table.edit": "Edit",
+    "table.delete": "Delete",
+    "breakdown.emptyNone": "No entries yet.",
     "breakdown.emptyNoNamed":
-      "Aún no hay obras con nombre. Las horas sin obra están en el total de arriba.",
+      "No named job sites yet. Hours without a site are included in the total above.",
     "errors.needDateStartEnd":
-      "Introduce al menos la fecha, la hora de inicio y la de fin.",
-    "errors.invalidTimeCombination": "Las horas no parecen válidas. Revísalas.",
-    "time.am": "a. m.",
-    "time.pm": "p. m.",
-    "format.hoursMinutes": "{hours} h {minutes} min",
+      "Please enter at least a date, start time, and end time.",
+    "errors.invalidTimeCombination":
+      "The times you entered do not look valid. Please check them.",
+    "time.am": "a.m.",
+    "time.pm": "p.m.",
+    "format.hoursMinutes": "{hours}h {minutes}m",
     "table.emptyCell": "—",
-    "table.editAria": "Editar esta entrada",
-    "table.deleteAria": "Eliminar esta entrada",
-    "dialog.closeBackdrop": "Cerrar diálogo",
-    "breakdown.listAria": "Totales de horas agrupados por obra",
-    "entries.tableCaption": "Entradas de tiempo de trabajo guardadas",
-    "pdf.title": "Parte de horas de trabajo",
-    "pdf.dateRange": "Rango de fechas",
-    "pdf.entriesSection": "Entradas",
-    "pdf.summarySection": "Resumen",
-    "pdf.summaryTotalHours": "Horas totales",
-    "pdf.summaryByJobSite": "Horas por obra",
-    "pdf.noJobSite": "Sin obra indicada",
+    "table.editAria": "Edit this entry",
+    "table.deleteAria": "Delete this entry",
+    "dialog.closeBackdrop": "Close dialog",
+    "breakdown.listAria": "Hours totals grouped by job site",
+    "entries.tableCaption": "Saved work time entries",
+    "pdf.title": "Work Hours Timesheet",
+    "pdf.dateRange": "Date range",
+    "pdf.entriesSection": "Entries",
+    "pdf.summarySection": "Summary",
+    "pdf.summaryTotalHours": "Total hours",
+    "pdf.summaryByJobSite": "Hours by job site",
+    "pdf.noJobSite": "No job site listed",
   },
 };
 
@@ -605,8 +590,7 @@ let deletePendingEntry = null;
 let deleteAllPending = false;
 let focusElementBeforeDeleteDialog = null;
 let deleteAllEntriesButton;
-let exportPdfButton;
-let exportCsvButton;
+let exportEntriesButton;
 
 let formErrorKey = null;
 
@@ -800,43 +784,7 @@ function syncDeleteAllButtonState() {
 
 function syncExportButtonState() {
   const disabled = entries.length === 0;
-  if (exportPdfButton) exportPdfButton.disabled = disabled;
-  if (exportCsvButton) exportCsvButton.disabled = disabled;
-}
-
-function escapeCsvCell(value) {
-  const text = value == null ? "" : String(value);
-  if (/[",\n]/.test(text)) {
-    return `"${text.replaceAll('"', '""')}"`;
-  }
-  return text;
-}
-
-function buildExportCsv() {
-  const sorted = getSortedEntries();
-  const header = [
-    t("csv.headerDate"),
-    t("csv.headerJobSite"),
-    t("csv.headerStart"),
-    t("csv.headerBreakStart"),
-    t("csv.headerBreakEnd"),
-    t("csv.headerEnd"),
-    t("csv.headerTotal"),
-  ];
-
-  const rows = sorted.map((entry) => [
-    entry.date,
-    displayJobSiteCell(entry),
-    formatTimeTo12Hour(entry.startTime),
-    entry.breakStart ? formatTimeTo12Hour(entry.breakStart) : t("table.emptyCell"),
-    entry.breakEnd ? formatTimeTo12Hour(entry.breakEnd) : t("table.emptyCell"),
-    formatTimeTo12Hour(entry.endTime),
-    formatMinutesAsHoursString(entry.totalMinutes),
-  ]);
-
-  return [header, ...rows]
-    .map((row) => row.map(escapeCsvCell).join(","))
-    .join("\n");
+  if (exportEntriesButton) exportEntriesButton.disabled = disabled;
 }
 
 function getDateRangeLabel(sortedEntries) {
@@ -1087,15 +1035,6 @@ async function exportEntriesAsPdf() {
   const today = getTodayDateString();
   const pdfBlob = buildPdfTimesheetBlob();
   await shareOrDownloadBlob(pdfBlob, `work-hours-timesheet-${today}.pdf`, "application/pdf");
-}
-
-function exportEntriesAsCsv() {
-  if (entries.length === 0) return;
-
-  const csv = buildExportCsv();
-  const today = getTodayDateString();
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-  downloadBlob(blob, `work-hours-export-${today}.csv`);
 }
 
 // Render the entries table from the `entries` array.
@@ -1363,8 +1302,7 @@ document.addEventListener("DOMContentLoaded", () => {
   deleteConfirmYesButton = document.getElementById("delete-confirm-yes");
   deleteConfirmNoButton = document.getElementById("delete-confirm-no");
   deleteAllEntriesButton = document.getElementById("delete-all-entries-btn");
-  exportPdfButton = document.getElementById("export-pdf-btn");
-  exportCsvButton = document.getElementById("export-csv-btn");
+  exportEntriesButton = document.getElementById("export-entries-btn");
 
   currentLang = loadSavedLanguage();
   const langSelect = document.getElementById("lang-select");
@@ -1456,15 +1394,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  if (exportPdfButton) {
-    exportPdfButton.addEventListener("click", () => {
+  if (exportEntriesButton) {
+    exportEntriesButton.addEventListener("click", () => {
       void exportEntriesAsPdf();
-    });
-  }
-
-  if (exportCsvButton) {
-    exportCsvButton.addEventListener("click", () => {
-      exportEntriesAsCsv();
     });
   }
 });
