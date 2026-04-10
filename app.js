@@ -1009,11 +1009,12 @@ function buildPdfTimesheetBlob() {
   };
   const cols = {
     date: 42,
-    jobSite: 132,
-    start: 306,
-    break: 372,
-    end: 462,
-    total: 528,
+    jobSite: 96,
+    start: 230,
+    breakStart: 292,
+    breakEnd: 366,
+    end: 442,
+    totalRight: 560,
   };
   const pages = [];
   const summaryRows = getJobSiteSummaryRows(sorted);
@@ -1104,25 +1105,27 @@ function buildPdfTimesheetBlob() {
 
   const drawTableHeader = () => {
     addRect(marginLeft, y, usableWidth, 24, colors.panel);
-    addText(t("table.date"), cols.date, y + 15, 9, { font: "bold", color: colors.muted });
-    addText(t("table.jobSite"), cols.jobSite, y + 15, 9, {
+    addText(t("table.date"), cols.date, y + 15, 8, { font: "bold", color: colors.muted });
+    addText(t("table.jobSite"), cols.jobSite, y + 15, 8, {
       font: "bold",
       color: colors.muted,
     });
-    addText(t("table.start"), cols.start, y + 15, 9, { font: "bold", color: colors.muted });
-    addText(t("break.title"), cols.break, y + 15, 9, { font: "bold", color: colors.muted });
-    addText(t("table.end"), cols.end, y + 15, 9, { font: "bold", color: colors.muted });
-    addTextRight(t("table.total"), pageWidth - marginRight - 10, y + 15, 9, {
+    addText(t("table.start"), cols.start, y + 15, 8, { font: "bold", color: colors.muted });
+    addText(t("table.breakStart"), cols.breakStart, y + 15, 8, {
+      font: "bold",
+      color: colors.muted,
+    });
+    addText(t("table.breakEnd"), cols.breakEnd, y + 15, 8, {
+      font: "bold",
+      color: colors.muted,
+    });
+    addText(t("table.end"), cols.end, y + 15, 8, { font: "bold", color: colors.muted });
+    addTextRight(t("table.total"), cols.totalRight, y + 15, 8, {
       font: "bold",
       color: colors.muted,
       maxWidth: 56,
     });
     y += 24;
-  };
-
-  const formatBreakWindow = (entry) => {
-    if (!entry.breakStart || !entry.breakEnd) return t("table.emptyCell");
-    return `${formatTimeTo12Hour(entry.breakStart)} - ${formatTimeTo12Hour(entry.breakEnd)}`;
   };
 
   createPage();
@@ -1154,26 +1157,32 @@ function buildPdfTimesheetBlob() {
       addRect(marginLeft, y, usableWidth, rowHeight, colors.panelAlt);
     }
 
-    addText(entry.date, cols.date, y + 14, 9);
+    addText(entry.date, cols.date, y + 14, 8);
     addText(
-      truncatePdfText(displayJobSiteCell(entry), cols.start - cols.jobSite - 12, 9),
+      truncatePdfText(displayJobSiteCell(entry), cols.start - cols.jobSite - 10, 8),
       cols.jobSite,
       y + 14,
-      9
+      8
     );
-    addText(formatTimeTo12Hour(entry.startTime), cols.start, y + 14, 9);
+    addText(formatTimeTo12Hour(entry.startTime), cols.start, y + 14, 8);
     addText(
-      truncatePdfText(formatBreakWindow(entry), cols.end - cols.break - 10, 9),
-      cols.break,
+      entry.breakStart ? formatTimeTo12Hour(entry.breakStart) : t("table.emptyCell"),
+      cols.breakStart,
       y + 14,
-      9
+      8
     );
-    addText(formatTimeTo12Hour(entry.endTime), cols.end, y + 14, 9);
+    addText(
+      entry.breakEnd ? formatTimeTo12Hour(entry.breakEnd) : t("table.emptyCell"),
+      cols.breakEnd,
+      y + 14,
+      8
+    );
+    addText(formatTimeTo12Hour(entry.endTime), cols.end, y + 14, 8);
     addTextRight(
       formatMinutesAsHoursString(entry.totalMinutes),
-      pageWidth - marginRight - 10,
+      cols.totalRight,
       y + 14,
-      9,
+      8,
       { maxWidth: 56 }
     );
     addLine(marginLeft, y + rowHeight, pageWidth - marginRight, colors.border, 0.6);
