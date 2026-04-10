@@ -839,32 +839,129 @@ function encodePdfText(value) {
   return `<${hex}>`;
 }
 
-function buildPdfContentStream(lines, pageHeight) {
-  const commands = ["BT", "/F1 10 Tf"];
+function estimatePdfTextWidth(text, size) {
+  return String(text).length * size * 0.52;
+}
 
-  for (const line of lines) {
-    const fontSize = Number((line.size || 10).toFixed(2));
-    const x = Number(line.x.toFixed(2));
-    const y = Number((pageHeight - line.y).toFixed(2));
-    const text = encodePdfText(line.text);
+function truncatePdfText(text, maxWidth, size) {
+  const raw = String(text ?? "");
+  if (estimatePdfTextWidth(raw, size) <= maxWidth) return raw;
 
-    commands.push(`${fontSize} Tf`);
-    commands.push(`1 0 0 1 ${x} ${y} Tm`);
-    commands.push(`${text} Tj`);
+  let trimmed = raw;
+  while (trimmed.length > 1 && estimatePdfTextWidth(`${trimmed}...`, size) > maxWidth) {
+    trimmed = trimmed.slice(0, -1);
+  }
+  return `${trimmed}...`;
+}
+
+function wrapPdfText(text, maxWidth, size) {
+  const words = String(text ?? "").split(/\s+/).filter(Boolean);
+  if (words.length === 0) return [""];
+
+  const lines = [];
+  let current = "";
+
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (estimatePdfTextWidth(candidate, size) <= maxWidth) {
+      current = candidate;
+      continue;
+    }
+
+    if (current) {
+      lines.push(current);
+      current = word;
+      continue;
+    }
+
+    lines.push(truncatePdfText(word, maxWidth, size));
   }
 
-  commands.push("ET");
+  if (current) lines.push(current);
+  return lines;
+}
+
+function pdfColorOps(color, stroke = false) {
+  const [r, g, b] = color;
+  const command = stroke ? "RG" : "rg";
+  return `${r} ${g} ${b} ${command}`;
+}
+
+function buildPdfContentStream(ops, pageHeight) {
+  const commands = [];
+  let inTextBlock = false;
+
+  const closeTextBlock = () => {
+    if (!inTextBlock) return;
+    commands.push("ET");
+    inTextBlock = false;
+  };
+
+  const openTextBlock = () => {
+    if (inTextBlock) return;
+    commands.push("BT");
+    inTextBlock = true;
+  };
+
+  for (const op of ops) {
+    if (op.type === "text") {
+      openTextBlock();
+      const fontSize = Number((op.size || 10).toFixed(2));
+      const x = Number(op.x.toFixed(2));
+      const y = Number((pageHeight - op.y).toFixed(2));
+      const fontRef = op.font === "bold" ? "/F2" : "/F1";
+      const text = encodePdfText(op.text);
+
+      if (op.color) {
+        commands.push(pdfColorOps(op.color));
+      }
+
+      commands.push(`${fontRef} ${fontSize} Tf`);
+      commands.push(`1 0 0 1 ${x} ${y} Tm`);
+      commands.push(`${text} Tj`);
+      continue;
+    }
+
+    closeTextBlock();
+
+    if (op.type === "rect") {
+      if (op.fillColor) {
+        commands.push(pdfColorOps(op.fillColor));
+      }
+      const x = Number(op.x.toFixed(2));
+      const y = Number((pageHeight - op.y - op.h).toFixed(2));
+      const w = Number(op.w.toFixed(2));
+      const h = Number(op.h.toFixed(2));
+      commands.push(`${x} ${y} ${w} ${h} re ${op.mode || "f"}`);
+      continue;
+    }
+
+    if (op.type === "line") {
+      if (op.color) {
+        commands.push(pdfColorOps(op.color, true));
+      }
+      const width = Number((op.width || 1).toFixed(2));
+      const x1 = Number(op.x1.toFixed(2));
+      const y1 = Number((pageHeight - op.y1).toFixed(2));
+      const x2 = Number(op.x2.toFixed(2));
+      const y2 = Number((pageHeight - op.y2).toFixed(2));
+      commands.push(`${width} w`);
+      commands.push(`${x1} ${y1} m ${x2} ${y2} l S`);
+    }
+  }
+
+  closeTextBlock();
   return commands.join("\n");
 }
 
 function createSimplePdf(pages, options = {}) {
   const pageWidth = options.pageWidth || 612;
   const pageHeight = options.pageHeight || 792;
-  const pageLines = Array.isArray(pages[0]) ? pages : [pages];
-  const pageCount = pageLines.length;
+  const pageOps = Array.isArray(pages[0]) ? pages : [pages];
+  const pageCount = pageOps.length;
   const pageObjectStart = 4;
   const contentObjectStart = pageObjectStart + pageCount;
-  const kidsRefs = pageLines
+  const kidsRefs = pageOps
     .map((_, index) => `${pageObjectStart + index} 0 R`)
     .join(" ");
 
@@ -872,16 +969,17 @@ function createSimplePdf(pages, options = {}) {
     "<< /Type /Catalog /Pages 2 0 R >>",
     `<< /Type /Pages /Kids [${kidsRefs}] /Count ${pageCount} >>`,
     "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>",
   ];
 
   for (let i = 0; i < pageCount; i += 1) {
     objects.push(
-      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 3 0 R >> >> /Contents ${contentObjectStart + i} 0 R >>`
+      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${contentObjectStart + i} 0 R >>`
     );
   }
 
-  for (const lines of pageLines) {
-    const content = buildPdfContentStream(lines, pageHeight);
+  for (const ops of pageOps) {
+    const content = buildPdfContentStream(ops, pageHeight);
     objects.push(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
   }
 
@@ -909,80 +1007,238 @@ function createSimplePdf(pages, options = {}) {
 
 function buildPdfTimesheetBlob() {
   const sorted = getSortedEntries();
-  const marginLeft = 40;
-  const marginRight = 40;
   const pageWidth = 612;
   const pageHeight = 792;
-  const pageBottom = 740;
-  const maxWidth = pageWidth - marginLeft - marginRight;
-  const pages = [[]];
+  const marginLeft = 42;
+  const marginRight = 42;
+  const topMargin = 44;
+  const bottomMargin = 54;
+  const usableWidth = pageWidth - marginLeft - marginRight;
+  const colors = {
+    ink: [0.12, 0.15, 0.19],
+    muted: [0.38, 0.42, 0.47],
+    border: [0.84, 0.86, 0.89],
+    panel: [0.96, 0.97, 0.98],
+    panelAlt: [0.985, 0.987, 0.99],
+    accent: [0.18, 0.38, 0.63],
+  };
+  const cols = {
+    date: 42,
+    jobSite: 132,
+    start: 306,
+    break: 372,
+    end: 462,
+    total: 528,
+  };
+  const pages = [];
   const summaryRows = getJobSiteSummaryRows(sorted);
   const dateRange = getDateRangeLabel(sorted);
   const totalMinutes = sorted.reduce((sum, entry) => sum + entry.totalMinutes, 0);
-  let y = 46;
+  let y = topMargin;
+  let ops = [];
 
-  const currentPageLines = () => pages[pages.length - 1];
-  const ensureRoom = (neededHeight = 14) => {
-    if (y + neededHeight <= pageBottom) return;
-    pages.push([]);
-    y = 46;
+  const createPage = () => {
+    ops = [];
+    pages.push(ops);
+    y = topMargin;
   };
 
-  const pushLine = (text, size = 10, x = marginLeft, gapAfter = 14) => {
-    ensureRoom(gapAfter);
-    currentPageLines().push({ text, size, x, y });
-    y += gapAfter;
+  const addText = (text, x, textY, size = 10, options = {}) => {
+    ops.push({
+      type: "text",
+      text,
+      x,
+      y: textY,
+      size,
+      font: options.font === "bold" ? "bold" : "regular",
+      color: options.color || colors.ink,
+    });
   };
 
-  const pushWrappedLine = (text, size = 10, x = marginLeft, gapAfter = 14) => {
-    const approxChars = Math.max(18, Math.floor((maxWidth - (x - marginLeft)) / (size * 0.58)));
-    const words = String(text).split(/\s+/);
-    let current = "";
+  const addTextRight = (text, rightX, textY, size = 10, options = {}) => {
+    const display = truncatePdfText(text, options.maxWidth || 160, size);
+    const width = estimatePdfTextWidth(display, size);
+    addText(display, rightX - width, textY, size, options);
+  };
 
-    for (const word of words) {
-      const candidate = current ? `${current} ${word}` : word;
-      if (candidate.length <= approxChars) {
-        current = candidate;
-      } else {
-        if (current) pushLine(current, size, x, gapAfter);
-        current = word;
-      }
+  const addRect = (x, rectY, w, h, fillColor) => {
+    ops.push({ type: "rect", x, y: rectY, w, h, fillColor, mode: "f" });
+  };
+
+  const addLine = (x1, lineY, x2, color = colors.border, width = 1) => {
+    ops.push({ type: "line", x1, y1: lineY, x2, y2: lineY, color, width });
+  };
+
+  const ensureSpace = (height, options = {}) => {
+    if (y + height <= pageHeight - bottomMargin) return;
+    createPage();
+    drawPageHeader(options.continued === true);
+    if (options.repeatTableHeader) {
+      y += 12;
+      drawTableHeader();
+    }
+  };
+
+  const drawPageHeader = (continued = false) => {
+    addRect(marginLeft, y, usableWidth, 4, colors.accent);
+    y += 18;
+    addText(continued ? `${t("pdf.title")} (cont.)` : t("pdf.title"), marginLeft, y, 20, {
+      font: "bold",
+    });
+    addTextRight(
+      `${t("pdf.dateRange")}: ${dateRange}`,
+      pageWidth - marginRight,
+      y + 1,
+      10,
+      { color: colors.muted, maxWidth: 220 }
+    );
+    y += 22;
+    addText(
+      `${t("summary.allSaved")}: ${sorted.length}   ${t("pdf.summaryTotalHours")}: ${formatMinutesAsHoursString(totalMinutes)}`,
+      marginLeft,
+      y,
+      10,
+      { color: colors.muted }
+    );
+    y += 18;
+    addLine(marginLeft, y, pageWidth - marginRight, colors.border, 1);
+    y += 18;
+  };
+
+  const drawSectionTitle = (title) => {
+    ensureSpace(26);
+    addText(title, marginLeft, y, 13, { font: "bold" });
+    y += 14;
+  };
+
+  const drawSummaryCard = (label, value, x, cardY, w) => {
+    addRect(x, cardY, w, 54, colors.panel);
+    addText(label, x + 12, cardY + 17, 9, { color: colors.muted });
+    addText(value, x + 12, cardY + 39, 15, { font: "bold" });
+  };
+
+  const drawTableHeader = () => {
+    addRect(marginLeft, y, usableWidth, 24, colors.panel);
+    addText(t("table.date"), cols.date, y + 15, 9, { font: "bold", color: colors.muted });
+    addText(t("table.jobSite"), cols.jobSite, y + 15, 9, {
+      font: "bold",
+      color: colors.muted,
+    });
+    addText(t("table.start"), cols.start, y + 15, 9, { font: "bold", color: colors.muted });
+    addText(t("break.title"), cols.break, y + 15, 9, { font: "bold", color: colors.muted });
+    addText(t("table.end"), cols.end, y + 15, 9, { font: "bold", color: colors.muted });
+    addTextRight(t("table.total"), pageWidth - marginRight - 10, y + 15, 9, {
+      font: "bold",
+      color: colors.muted,
+      maxWidth: 56,
+    });
+    y += 24;
+  };
+
+  const formatBreakWindow = (entry) => {
+    if (!entry.breakStart || !entry.breakEnd) return t("table.emptyCell");
+    return `${formatTimeTo12Hour(entry.breakStart)} - ${formatTimeTo12Hour(entry.breakEnd)}`;
+  };
+
+  createPage();
+  drawPageHeader(false);
+
+  ensureSpace(76);
+  const summaryTop = y;
+  const cardGap = 12;
+  const cardWidth = (usableWidth - cardGap * 2) / 3;
+  drawSummaryCard(t("pdf.summaryTotalHours"), formatMinutesAsHoursString(totalMinutes), marginLeft, summaryTop, cardWidth);
+  drawSummaryCard(t("summary.allSaved"), String(sorted.length), marginLeft + cardWidth + cardGap, summaryTop, cardWidth);
+  drawSummaryCard(
+    t("breakdown.title"),
+    String(summaryRows.length),
+    marginLeft + (cardWidth + cardGap) * 2,
+    summaryTop,
+    cardWidth
+  );
+  y += 72;
+
+  drawSectionTitle(t("pdf.entriesSection"));
+  drawTableHeader();
+
+  sorted.forEach((entry, index) => {
+    const rowHeight = 22;
+    ensureSpace(rowHeight + 8, { repeatTableHeader: true, continued: true });
+
+    if (index % 2 === 0) {
+      addRect(marginLeft, y, usableWidth, rowHeight, colors.panelAlt);
     }
 
-    if (current) pushLine(current, size, x, gapAfter);
-  };
-
-  pushLine(t("pdf.title"), 18, marginLeft, 24);
-  pushLine(`${t("pdf.dateRange")}: ${dateRange}`, 11, marginLeft, 22);
-  pushLine(t("pdf.entriesSection"), 13, marginLeft, 18);
-  pushLine(
-    `${t("table.date")} | ${t("table.start")} | ${t("table.breakStart")} | ${t("table.breakEnd")} | ${t("table.end")} | ${t("table.total")}`,
-    9,
-    marginLeft,
-    16
-  );
-
-  for (const entry of sorted) {
-    const rowText = [
-      entry.date,
-      formatTimeTo12Hour(entry.startTime),
-      entry.breakStart ? formatTimeTo12Hour(entry.breakStart) : t("table.emptyCell"),
-      entry.breakEnd ? formatTimeTo12Hour(entry.breakEnd) : t("table.emptyCell"),
-      formatTimeTo12Hour(entry.endTime),
+    addText(entry.date, cols.date, y + 14, 9);
+    addText(
+      truncatePdfText(displayJobSiteCell(entry), cols.start - cols.jobSite - 12, 9),
+      cols.jobSite,
+      y + 14,
+      9
+    );
+    addText(formatTimeTo12Hour(entry.startTime), cols.start, y + 14, 9);
+    addText(
+      truncatePdfText(formatBreakWindow(entry), cols.end - cols.break - 10, 9),
+      cols.break,
+      y + 14,
+      9
+    );
+    addText(formatTimeTo12Hour(entry.endTime), cols.end, y + 14, 9);
+    addTextRight(
       formatMinutesAsHoursString(entry.totalMinutes),
-    ].join(" | ");
+      pageWidth - marginRight - 10,
+      y + 14,
+      9,
+      { maxWidth: 56 }
+    );
+    addLine(marginLeft, y + rowHeight, pageWidth - marginRight, colors.border, 0.6);
+    y += rowHeight;
+  });
 
-    pushWrappedLine(rowText, 9, marginLeft, 14);
-  }
+  y += 18;
+  drawSectionTitle(t("pdf.summarySection"));
+  ensureSpace(28);
+  addText(`${t("pdf.summaryTotalHours")}:`, marginLeft, y + 2, 10, { color: colors.muted });
+  addText(formatMinutesAsHoursString(totalMinutes), marginLeft + 110, y + 2, 12, { font: "bold" });
+  y += 22;
+  addLine(marginLeft, y, pageWidth - marginRight, colors.border, 1);
+  y += 18;
+  addText(t("pdf.summaryByJobSite"), marginLeft, y, 11, { font: "bold" });
+  y += 14;
 
-  y += 10;
-  pushLine(t("pdf.summarySection"), 13, marginLeft, 18);
-  pushLine(`${t("pdf.summaryTotalHours")}: ${formatMinutesAsHoursString(totalMinutes)}`, 10);
-  pushLine(t("pdf.summaryByJobSite"), 10, marginLeft, 16);
+  summaryRows.forEach((row, index) => {
+    const wrappedName = wrapPdfText(row.label, usableWidth - 130, 10);
+    const rowHeight = Math.max(24, wrappedName.length * 12 + 8);
+    ensureSpace(rowHeight + 4, { continued: true });
 
-  for (const row of summaryRows) {
-    pushWrappedLine(`${row.label}: ${formatMinutesAsHoursString(row.minutes)}`, 10, marginLeft + 10, 14);
-  }
+    if (index % 2 === 0) {
+      addRect(marginLeft, y, usableWidth, rowHeight, colors.panelAlt);
+    }
+
+    wrappedName.forEach((line, lineIndex) => {
+      addText(line, marginLeft + 10, y + 16 + lineIndex * 12, 10);
+    });
+    addTextRight(
+      formatMinutesAsHoursString(row.minutes),
+      pageWidth - marginRight - 10,
+      y + 16,
+      10,
+      { font: "bold", maxWidth: 90 }
+    );
+    addLine(marginLeft, y + rowHeight, pageWidth - marginRight, colors.border, 0.6);
+    y += rowHeight;
+  });
+
+  pages.forEach((pageOps, index) => {
+    pageOps.push({
+      type: "text",
+      text: `${index + 1}`,
+      x: pageWidth - marginRight,
+      y: pageHeight - 18,
+      size: 9,
+      color: colors.muted,
+    });
+  });
 
   return createSimplePdf(pages, { pageWidth, pageHeight });
 }
@@ -1014,15 +1270,11 @@ async function shareOrDownloadBlob(blob, filename, mimeType) {
 
     if (navigator.canShare({ files: [shareFile] })) {
       try {
-        await navigator.share({
-          files: [shareFile],
-          title: filename,
-        });
+        await navigator.share({ files: [shareFile] });
         return;
       } catch (error) {
-        if (error && error.name === "AbortError") {
-          return;
-        }
+        console.warn("Share failed:", error);
+        return;
       }
     }
   }
