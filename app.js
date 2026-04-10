@@ -817,26 +817,11 @@ function getJobSiteSummaryRows(sortedEntries) {
 }
 
 function encodePdfText(value) {
-  const text = String(value);
-  let hex = "FEFF";
-
-  for (const char of text) {
-    const codePoint = char.codePointAt(0);
-    if (codePoint == null) continue;
-
-    if (codePoint <= 0xffff) {
-      hex += codePoint.toString(16).toUpperCase().padStart(4, "0");
-      continue;
-    }
-
-    const adjusted = codePoint - 0x10000;
-    const high = 0xd800 + (adjusted >> 10);
-    const low = 0xdc00 + (adjusted & 0x3ff);
-    hex += high.toString(16).toUpperCase().padStart(4, "0");
-    hex += low.toString(16).toUpperCase().padStart(4, "0");
-  }
-
-  return `<${hex}>`;
+  return `(${String(value)
+    .replace(/\\/g, "\\\\")
+    .replace(/\(/g, "\\(")
+    .replace(/\)/g, "\\)")
+    .replace(/[^\x20-\x7E]/g, "?")})`;
 }
 
 function estimatePdfTextWidth(text, size) {
