@@ -222,6 +222,7 @@ body {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
+  align-items: flex-start;
   gap: var(--space-sm);
 }
 
@@ -231,6 +232,28 @@ body {
   min-height: 2.5rem;
   padding: 0.5rem 0.9rem;
   font-size: var(--text-sm);
+}
+
+.btn-export-secondary {
+  flex-shrink: 0;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.8rem;
+  font-size: var(--text-sm);
+}
+
+@media (max-width: 479px) {
+  .entries-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .entries-actions .btn {
+    flex: 1 1 calc(50% - var(--space-sm));
+  }
+
+  .entries-actions .btn-delete-all {
+    flex-basis: 100%;
+  }
 }
 
 .btn-delete-all {

@@ -57,7 +57,8 @@ const translations = {
     "form.clearForm": "Clear form",
     "entries.heading": "Saved entries",
     "entries.subtitle": "Stored locally in your browser only.",
-    "entries.export": "Export entries",
+    "entries.exportPdf": "Export PDF",
+    "entries.exportCsv": "CSV",
     "entries.deleteAll": "Delete all entries",
     "table.date": "Date",
     "table.jobSite": "Job site",
@@ -107,6 +108,13 @@ const translations = {
     "dialog.closeBackdrop": "Close dialog",
     "breakdown.listAria": "Hours totals grouped by job site",
     "entries.tableCaption": "Saved work time entries",
+    "pdf.title": "Work Hours Timesheet",
+    "pdf.dateRange": "Date range",
+    "pdf.entriesSection": "Entries",
+    "pdf.summarySection": "Summary",
+    "pdf.summaryTotalHours": "Total hours",
+    "pdf.summaryByJobSite": "Hours by job site",
+    "pdf.noJobSite": "No job site listed",
   },
   es: {
     "meta.title": "Registro de horas de trabajo",
@@ -138,7 +146,8 @@ const translations = {
     "form.clearForm": "Limpiar formulario",
     "entries.heading": "Entradas guardadas",
     "entries.subtitle": "Guardado solo en tu navegador.",
-    "entries.export": "Exportar entradas",
+    "entries.exportPdf": "Exportar PDF",
+    "entries.exportCsv": "CSV",
     "entries.deleteAll": "Eliminar todas las entradas",
     "table.date": "Fecha",
     "table.jobSite": "Obra / sitio",
@@ -188,6 +197,13 @@ const translations = {
     "dialog.closeBackdrop": "Cerrar diálogo",
     "breakdown.listAria": "Totales de horas agrupados por obra",
     "entries.tableCaption": "Entradas de tiempo de trabajo guardadas",
+    "pdf.title": "Parte de horas de trabajo",
+    "pdf.dateRange": "Rango de fechas",
+    "pdf.entriesSection": "Entradas",
+    "pdf.summarySection": "Resumen",
+    "pdf.summaryTotalHours": "Horas totales",
+    "pdf.summaryByJobSite": "Horas por obra",
+    "pdf.noJobSite": "Sin obra indicada",
   },
 };
 
@@ -589,7 +605,8 @@ let deletePendingEntry = null;
 let deleteAllPending = false;
 let focusElementBeforeDeleteDialog = null;
 let deleteAllEntriesButton;
-let exportEntriesButton;
+let exportPdfButton;
+let exportCsvButton;
 
 let formErrorKey = null;
 
@@ -782,8 +799,9 @@ function syncDeleteAllButtonState() {
 }
 
 function syncExportButtonState() {
-  if (!exportEntriesButton) return;
-  exportEntriesButton.disabled = entries.length === 0;
+  const disabled = entries.length === 0;
+  if (exportPdfButton) exportPdfButton.disabled = disabled;
+  if (exportCsvButton) exportCsvButton.disabled = disabled;
 }
 
 function escapeCsvCell(value) {
@@ -821,17 +839,212 @@ function buildExportCsv() {
     .join("\n");
 }
 
-function exportEntriesAsCsv() {
-  if (entries.length === 0) return;
+function getDateRangeLabel(sortedEntries) {
+  if (sortedEntries.length === 0) return t("table.emptyCell");
+  const firstDate = sortedEntries[0].date;
+  const lastDate = sortedEntries[sortedEntries.length - 1].date;
+  return firstDate === lastDate ? firstDate : `${firstDate} - ${lastDate}`;
+}
 
-  const csv = buildExportCsv();
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+function getJobSiteSummaryRows(sortedEntries) {
+  /** @type {Map<string, { label: string; minutes: number }>} */
+  const byKey = new Map();
+
+  for (const entry of sortedEntries) {
+    const trimmed = (entry.jobSite || "").trim();
+    const key = normalizeJobSiteKey(trimmed);
+    const label = trimmed || t("pdf.noJobSite");
+    const existing = byKey.get(key);
+
+    if (existing) {
+      existing.minutes += entry.totalMinutes;
+    } else {
+      byKey.set(key, { label, minutes: entry.totalMinutes });
+    }
+  }
+
+  return Array.from(byKey.values()).sort((a, b) =>
+    a.label.localeCompare(b.label, undefined, { sensitivity: "base" })
+  );
+}
+
+function encodePdfText(value) {
+  const text = String(value);
+  let hex = "FEFF";
+
+  for (const char of text) {
+    const codePoint = char.codePointAt(0);
+    if (codePoint == null) continue;
+
+    if (codePoint <= 0xffff) {
+      hex += codePoint.toString(16).toUpperCase().padStart(4, "0");
+      continue;
+    }
+
+    const adjusted = codePoint - 0x10000;
+    const high = 0xd800 + (adjusted >> 10);
+    const low = 0xdc00 + (adjusted & 0x3ff);
+    hex += high.toString(16).toUpperCase().padStart(4, "0");
+    hex += low.toString(16).toUpperCase().padStart(4, "0");
+  }
+
+  return `<${hex}>`;
+}
+
+function buildPdfContentStream(lines, pageHeight) {
+  const commands = ["BT", "/F1 10 Tf"];
+
+  for (const line of lines) {
+    const fontSize = Number((line.size || 10).toFixed(2));
+    const x = Number(line.x.toFixed(2));
+    const y = Number((pageHeight - line.y).toFixed(2));
+    const text = encodePdfText(line.text);
+
+    commands.push(`${fontSize} Tf`);
+    commands.push(`1 0 0 1 ${x} ${y} Tm`);
+    commands.push(`${text} Tj`);
+  }
+
+  commands.push("ET");
+  return commands.join("\n");
+}
+
+function createSimplePdf(pages, options = {}) {
+  const pageWidth = options.pageWidth || 612;
+  const pageHeight = options.pageHeight || 792;
+  const pageLines = Array.isArray(pages[0]) ? pages : [pages];
+  const pageCount = pageLines.length;
+  const pageObjectStart = 4;
+  const contentObjectStart = pageObjectStart + pageCount;
+  const kidsRefs = pageLines
+    .map((_, index) => `${pageObjectStart + index} 0 R`)
+    .join(" ");
+
+  const objects = [
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    `<< /Type /Pages /Kids [${kidsRefs}] /Count ${pageCount} >>`,
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+  ];
+
+  for (let i = 0; i < pageCount; i += 1) {
+    objects.push(
+      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 3 0 R >> >> /Contents ${contentObjectStart + i} 0 R >>`
+    );
+  }
+
+  for (const lines of pageLines) {
+    const content = buildPdfContentStream(lines, pageHeight);
+    objects.push(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
+  }
+
+  let pdf = "%PDF-1.4\n";
+  const offsets = [0];
+
+  for (let i = 0; i < objects.length; i += 1) {
+    offsets.push(pdf.length);
+    pdf += `${i + 1} 0 obj\n${objects[i]}\nendobj\n`;
+  }
+
+  const xrefOffset = pdf.length;
+  pdf += `xref\n0 ${objects.length + 1}\n`;
+  pdf += "0000000000 65535 f \n";
+
+  for (let i = 1; i < offsets.length; i += 1) {
+    pdf += `${String(offsets[i]).padStart(10, "0")} 00000 n \n`;
+  }
+
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\n`;
+  pdf += `startxref\n${xrefOffset}\n%%EOF`;
+
+  return new Blob([pdf], { type: "application/pdf" });
+}
+
+function buildPdfTimesheetBlob() {
+  const sorted = getSortedEntries();
+  const marginLeft = 40;
+  const marginRight = 40;
+  const pageWidth = 612;
+  const pageHeight = 792;
+  const pageBottom = 740;
+  const maxWidth = pageWidth - marginLeft - marginRight;
+  const pages = [[]];
+  const summaryRows = getJobSiteSummaryRows(sorted);
+  const dateRange = getDateRangeLabel(sorted);
+  const totalMinutes = sorted.reduce((sum, entry) => sum + entry.totalMinutes, 0);
+  let y = 46;
+
+  const currentPageLines = () => pages[pages.length - 1];
+  const ensureRoom = (neededHeight = 14) => {
+    if (y + neededHeight <= pageBottom) return;
+    pages.push([]);
+    y = 46;
+  };
+
+  const pushLine = (text, size = 10, x = marginLeft, gapAfter = 14) => {
+    ensureRoom(gapAfter);
+    currentPageLines().push({ text, size, x, y });
+    y += gapAfter;
+  };
+
+  const pushWrappedLine = (text, size = 10, x = marginLeft, gapAfter = 14) => {
+    const approxChars = Math.max(18, Math.floor((maxWidth - (x - marginLeft)) / (size * 0.58)));
+    const words = String(text).split(/\s+/);
+    let current = "";
+
+    for (const word of words) {
+      const candidate = current ? `${current} ${word}` : word;
+      if (candidate.length <= approxChars) {
+        current = candidate;
+      } else {
+        if (current) pushLine(current, size, x, gapAfter);
+        current = word;
+      }
+    }
+
+    if (current) pushLine(current, size, x, gapAfter);
+  };
+
+  pushLine(t("pdf.title"), 18, marginLeft, 24);
+  pushLine(`${t("pdf.dateRange")}: ${dateRange}`, 11, marginLeft, 22);
+  pushLine(t("pdf.entriesSection"), 13, marginLeft, 18);
+  pushLine(
+    `${t("table.date")} | ${t("table.start")} | ${t("table.breakStart")} | ${t("table.breakEnd")} | ${t("table.end")} | ${t("table.total")}`,
+    9,
+    marginLeft,
+    16
+  );
+
+  for (const entry of sorted) {
+    const rowText = [
+      entry.date,
+      formatTimeTo12Hour(entry.startTime),
+      entry.breakStart ? formatTimeTo12Hour(entry.breakStart) : t("table.emptyCell"),
+      entry.breakEnd ? formatTimeTo12Hour(entry.breakEnd) : t("table.emptyCell"),
+      formatTimeTo12Hour(entry.endTime),
+      formatMinutesAsHoursString(entry.totalMinutes),
+    ].join(" | ");
+
+    pushWrappedLine(rowText, 9, marginLeft, 14);
+  }
+
+  y += 10;
+  pushLine(t("pdf.summarySection"), 13, marginLeft, 18);
+  pushLine(`${t("pdf.summaryTotalHours")}: ${formatMinutesAsHoursString(totalMinutes)}`, 10);
+  pushLine(t("pdf.summaryByJobSite"), 10, marginLeft, 16);
+
+  for (const row of summaryRows) {
+    pushWrappedLine(`${row.label}: ${formatMinutesAsHoursString(row.minutes)}`, 10, marginLeft + 10, 14);
+  }
+
+  return createSimplePdf(pages, { pageWidth, pageHeight });
+}
+
+function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
-  const today = getTodayDateString();
 
   link.href = url;
-  link.download = `work-hours-export-${today}.csv`;
+  link.download = filename;
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -839,6 +1052,50 @@ function exportEntriesAsCsv() {
   setTimeout(() => {
     URL.revokeObjectURL(url);
   }, 0);
+}
+
+async function shareOrDownloadBlob(blob, filename, mimeType) {
+  const canUseFileShare =
+    typeof File !== "undefined" &&
+    typeof navigator !== "undefined" &&
+    typeof navigator.share === "function" &&
+    typeof navigator.canShare === "function";
+
+  if (canUseFileShare) {
+    const shareFile = new File([blob], filename, { type: mimeType });
+
+    if (navigator.canShare({ files: [shareFile] })) {
+      try {
+        await navigator.share({
+          files: [shareFile],
+          title: filename,
+        });
+        return;
+      } catch (error) {
+        if (error && error.name === "AbortError") {
+          return;
+        }
+      }
+    }
+  }
+
+  downloadBlob(blob, filename);
+}
+
+async function exportEntriesAsPdf() {
+  if (entries.length === 0) return;
+  const today = getTodayDateString();
+  const pdfBlob = buildPdfTimesheetBlob();
+  await shareOrDownloadBlob(pdfBlob, `work-hours-timesheet-${today}.pdf`, "application/pdf");
+}
+
+function exportEntriesAsCsv() {
+  if (entries.length === 0) return;
+
+  const csv = buildExportCsv();
+  const today = getTodayDateString();
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  downloadBlob(blob, `work-hours-export-${today}.csv`);
 }
 
 // Render the entries table from the `entries` array.
@@ -1106,7 +1363,8 @@ document.addEventListener("DOMContentLoaded", () => {
   deleteConfirmYesButton = document.getElementById("delete-confirm-yes");
   deleteConfirmNoButton = document.getElementById("delete-confirm-no");
   deleteAllEntriesButton = document.getElementById("delete-all-entries-btn");
-  exportEntriesButton = document.getElementById("export-entries-btn");
+  exportPdfButton = document.getElementById("export-pdf-btn");
+  exportCsvButton = document.getElementById("export-csv-btn");
 
   currentLang = loadSavedLanguage();
   const langSelect = document.getElementById("lang-select");
@@ -1198,8 +1456,14 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  if (exportEntriesButton) {
-    exportEntriesButton.addEventListener("click", () => {
+  if (exportPdfButton) {
+    exportPdfButton.addEventListener("click", () => {
+      void exportEntriesAsPdf();
+    });
+  }
+
+  if (exportCsvButton) {
+    exportCsvButton.addEventListener("click", () => {
       exportEntriesAsCsv();
     });
   }
