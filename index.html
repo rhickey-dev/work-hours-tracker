@@ -38,6 +38,26 @@
       </header>
 
       <main class="app-main">
+        <section class="card card--name" aria-labelledby="user-name-heading">
+          <div class="card__head">
+            <h2 id="user-name-heading" class="card__title" data-i18n="form.userName">Name</h2>
+          </div>
+          <div class="user-name-field">
+            <input
+              class="form-input"
+              type="text"
+              id="user-name"
+              name="user-name"
+              maxlength="200"
+              data-i18n-placeholder="form.userNamePlaceholder"
+              placeholder="Your name"
+              autocomplete="name"
+              spellcheck="false"
+              aria-labelledby="user-name-heading"
+            />
+          </div>
+        </section>
+
         <section class="card card--form" aria-labelledby="entry-heading">
           <div class="card__head">
             <h2 id="entry-heading" class="card__title" data-i18n="entry.heading">Daily time entry</h2>
@@ -300,6 +320,6 @@
       </div>
     </div>
 
-    <script src="app.js?v=2" defer></script>
+    <script src="app.js?v=4" defer></script>
   </body>
 </html>

@@ -26,6 +26,9 @@ const LEGACY_DRAFT_FIELD_NAMES = ["date", "startTime", "breakStart", "breakEnd",
 
 const I18N_STORAGE_KEY = "workHoursAppLang";
 
+// Persisted display name (separate from time-entry draft; never cleared with form or entries).
+const USER_NAME_STORAGE_KEY = "workHoursUserName";
+
 const translations = {
   en: {
     "meta.title": "Work Hours Tracker",
@@ -37,6 +40,8 @@ const translations = {
     "header.title": "Work Hours Tracker",
     "header.lede": "Track daily work time and your running total.",
     "entry.heading": "Daily time entry",
+    "form.userName": "Name",
+    "form.userNamePlaceholder": "Your name",
     "form.date": "Date",
     "form.dateHint": "Defaults to today.",
     "form.jobSite": "Job site",
@@ -101,6 +106,7 @@ const translations = {
     "breakdown.listAria": "Hours totals grouped by job site",
     "entries.tableCaption": "Saved work time entries",
     "pdf.title": "Work Hours Timesheet",
+    "pdf.name": "Name",
     "pdf.dateRange": "Date range",
     "pdf.entriesSection": "Entries",
     "pdf.summarySection": "Summary",
@@ -119,6 +125,8 @@ const translations = {
     "header.title": "Rastreador de horas de trabajo",
     "header.lede": "Rastrea el tiempo diario de trabajo y tu total acumulado.",
     "entry.heading": "Entrada diaria de tiempo",
+    "form.userName": "Nombre",
+    "form.userNamePlaceholder": "Tu nombre",
     "form.date": "Fecha",
     "form.dateHint": "Por defecto es la fecha de hoy.",
     "form.jobSite": "Obra / sitio",
@@ -184,6 +192,7 @@ const translations = {
     "breakdown.listAria": "Totales de horas agrupados por sitio de trabajo",
     "entries.tableCaption": "Entradas guardadas de tiempo de trabajo",
     "pdf.title": "Hoja de horas de trabajo",
+    "pdf.name": "Nombre",
     "pdf.dateRange": "Rango de fechas",
     "pdf.entriesSection": "Entradas",
     "pdf.summarySection": "Resumen",
@@ -212,6 +221,31 @@ function saveAppLanguage(lang) {
   } catch (_) {
     /* ignore */
   }
+}
+
+function loadUserNameFromStorage() {
+  try {
+    return localStorage.getItem(USER_NAME_STORAGE_KEY) ?? "";
+  } catch (_) {
+    return "";
+  }
+}
+
+function saveUserNameToStorage(value) {
+  try {
+    localStorage.setItem(USER_NAME_STORAGE_KEY, value);
+  } catch (_) {
+    /* ignore */
+  }
+}
+
+/** Trimmed name for PDF header; uses the field if present, else storage. */
+function getUserNameForPdf() {
+  if (userNameInput) {
+    const fromField = (userNameInput.value || "").trim();
+    if (fromField) return fromField;
+  }
+  return loadUserNameFromStorage().trim();
 }
 
 function t(key, vars = {}) {
@@ -574,6 +608,7 @@ let breakStartInput;
 let breakEndInput;
 let endInput;
 let jobSiteInput;
+let userNameInput;
 let formTotalDisplay;
 let formErrorElement;
 let clearFormButton;
@@ -794,6 +829,35 @@ function getDateRangeLabel(sortedEntries) {
   const firstDate = sortedEntries[0].date;
   const lastDate = sortedEntries[sortedEntries.length - 1].date;
   return firstDate === lastDate ? firstDate : `${firstDate} - ${lastDate}`;
+}
+
+/** Oldest → newest dates for safe download filenames (hyphens, no spaces). */
+function getDateRangeForFilename(sortedEntries) {
+  if (sortedEntries.length === 0) return "";
+  const firstDate = sortedEntries[0].date;
+  const lastDate = sortedEntries[sortedEntries.length - 1].date;
+  return firstDate === lastDate ? firstDate : `${firstDate}-to-${lastDate}`;
+}
+
+/** Strip characters unsafe in file names; collapse whitespace to single hyphens. */
+function sanitizeForDownloadFilename(raw) {
+  const cleaned = String(raw ?? "")
+    .trim()
+    .replace(/[\/\\?%*:|"<>]+/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+  return cleaned.slice(0, 120);
+}
+
+function buildExportPdfBasename(sortedEntries) {
+  const datePart = getDateRangeForFilename(sortedEntries);
+  const worker = getUserNameForPdf().trim();
+  const namePart = sanitizeForDownloadFilename(worker) || "Work-Hours-Timesheet";
+  let base = datePart ? `${namePart}-${datePart}` : namePart;
+  base = base.replace(/-+/g, "-").replace(/^-|-$/g, "");
+  if (base.length > 180) base = base.slice(0, 180).replace(/-+$/g, "");
+  return base || "timesheet-export";
 }
 
 function getJobSiteSummaryRows(sortedEntries) {
@@ -1021,6 +1085,10 @@ function buildPdfTimesheetBlob() {
   const pages = [];
   const summaryRows = getJobSiteSummaryRows(sorted);
   const dateRange = getDateRangeLabel(sorted);
+  const workerName = getUserNameForPdf().trim();
+  const pdfMainTitle = workerName
+    ? `${workerName} ${dateRange}`
+    : `${t("pdf.title")} ${dateRange}`;
   const totalMinutes = sorted.reduce((sum, entry) => sum + entry.totalMinutes, 0);
   let y = topMargin;
   let ops = [];
@@ -1070,16 +1138,10 @@ function buildPdfTimesheetBlob() {
   const drawPageHeader = (continued = false) => {
     addRect(marginLeft, y, usableWidth, 4, colors.accent);
     y += 18;
-    addText(continued ? `${t("pdf.title")} ${t("pdf.continued")}` : t("pdf.title"), marginLeft, y, 20, {
+    const headerTitle = continued ? `${pdfMainTitle} ${t("pdf.continued")}` : pdfMainTitle;
+    addText(truncatePdfText(headerTitle, usableWidth - 8, 20), marginLeft, y, 20, {
       font: "bold",
     });
-    addTextRight(
-      `${t("pdf.dateRange")}: ${dateRange}`,
-      pageWidth - marginRight,
-      y + 1,
-      10,
-      { color: colors.muted, maxWidth: 220 }
-    );
     y += 22;
     addText(
       `${t("summary.allSaved")}: ${sorted.length}   ${t("pdf.summaryTotalHours")}: ${formatMinutesAsHoursString(totalMinutes)}`,
@@ -1280,9 +1342,10 @@ async function shareOrDownloadBlob(blob, filename, mimeType) {
 
 async function exportEntriesAsPdf() {
   if (entries.length === 0) return;
-  const today = getTodayDateString();
+  const sorted = getSortedEntries();
   const pdfBlob = buildPdfTimesheetBlob();
-  await shareOrDownloadBlob(pdfBlob, `work-hours-timesheet-${today}.pdf`, "application/pdf");
+  const filename = `${buildExportPdfBasename(sorted)}.pdf`;
+  await shareOrDownloadBlob(pdfBlob, filename, "application/pdf");
 }
 
 // Render the entries table from the `entries` array.
@@ -1535,6 +1598,7 @@ document.addEventListener("DOMContentLoaded", () => {
   breakEndInput = document.getElementById("break-end");
   endInput = document.getElementById("end-time");
   jobSiteInput = document.getElementById("job-site");
+  userNameInput = document.getElementById("user-name");
   formTotalDisplay = document.getElementById("form-total-display");
   formErrorElement = document.getElementById("form-error");
   clearFormButton = document.getElementById("clear-form");
@@ -1561,6 +1625,15 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
   applyStaticI18n();
+
+  if (userNameInput) {
+    userNameInput.value = loadUserNameFromStorage();
+    const persistUserName = () => {
+      saveUserNameToStorage(userNameInput.value);
+    };
+    userNameInput.addEventListener("input", persistUserName);
+    userNameInput.addEventListener("change", persistUserName);
+  }
 
   if (deleteConfirmYesButton) {
     deleteConfirmYesButton.addEventListener("click", () => {

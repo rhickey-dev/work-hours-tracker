@@ -177,6 +177,14 @@ body {
   padding-bottom: var(--space-lg);
 }
 
+.card--name .card__head {
+  margin-bottom: var(--space-md);
+}
+
+.user-name-field {
+  margin: 0;
+}
+
 .card--table {
   padding-top: var(--space-md);
   overflow: hidden;
