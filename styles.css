@@ -348,6 +348,48 @@ body {
   box-shadow: 0 0 0 3px rgba(26, 26, 26, 0.12);
 }
 
+.input-with-prefix {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+}
+
+.input-with-prefix__symbol {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-right: none;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.input-with-prefix__input {
+  flex: 1;
+  min-width: 0;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.input-with-prefix:hover .input-with-prefix__symbol,
+.input-with-prefix:hover .input-with-prefix__input {
+  border-color: var(--color-border-strong);
+}
+
+.input-with-prefix:focus-within .input-with-prefix__symbol,
+.input-with-prefix:focus-within .input-with-prefix__input {
+  border-color: var(--color-focus);
+}
+
+.input-with-prefix:focus-within .input-with-prefix__input {
+  box-shadow: 0 0 0 3px rgba(26, 26, 26, 0.12);
+}
+
 .form-hint {
   margin: 0;
   font-size: var(--text-sm);
@@ -529,6 +571,11 @@ body {
   color: var(--color-text);
 }
 
+.data-table__rate {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
 .data-table thead {
   background: #f7f7f5;
 }
@@ -581,15 +628,36 @@ body {
 .weekly-summary__inner {
   display: flex;
   flex-direction: column;
-  gap: var(--space-xs);
+  gap: var(--space-sm);
+}
+
+.weekly-summary__totals {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
 }
 
 @media (min-width: 480px) {
   .weekly-summary__inner {
     flex-direction: row;
-    align-items: baseline;
+    align-items: flex-start;
     justify-content: space-between;
     gap: var(--space-md);
+  }
+
+  .weekly-summary__totals {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: flex-end;
+    gap: var(--space-md) var(--space-lg);
+  }
+}
+
+@media (min-width: 480px) {
+  .weekly-summary__inner .weekly-summary__label {
+    flex: 1;
+    min-width: 0;
   }
 }
 
@@ -614,6 +682,11 @@ body {
   letter-spacing: -0.03em;
   color: var(--color-text);
   line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.weekly-summary__figure--pay {
+  color: var(--color-accent, #2e619f);
 }
 
 .weekly-summary__unit {
@@ -648,6 +721,16 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+.weekly-summary__no-site--pay .weekly-summary__no-site-value {
+  color: var(--color-accent, #2e619f);
+}
+
+.weekly-summary__no-site--pay {
+  padding-top: var(--space-sm);
+  margin-top: var(--space-sm);
+  border-top-style: dashed;
+}
+
 /* Weekly breakdown by job site */
 .card--breakdown {
   padding-top: var(--space-md);
@@ -676,6 +759,43 @@ body {
   border-bottom: 1px solid var(--color-border);
 }
 
+.job-site-breakdown__header {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-xs) var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-subtle, #f7f7f5);
+}
+
+.job-site-breakdown__metrics {
+  display: flex;
+  flex-shrink: 0;
+  align-items: baseline;
+  gap: var(--space-md);
+  min-width: 9.5rem;
+  justify-content: flex-end;
+}
+
+.job-site-breakdown__metric-label {
+  flex: 1;
+  min-width: 3.5rem;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.job-site-breakdown__header .job-site-breakdown__name,
+.job-site-breakdown__header .job-site-breakdown__metric-label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
 .job-site-breakdown__row:last-child {
   border-bottom: none;
 }
@@ -690,10 +810,29 @@ body {
 }
 
 .job-site-breakdown__time {
+  flex: 1;
+  min-width: 3.5rem;
   font-size: var(--text-base);
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--color-text);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.job-site-breakdown__pay {
+  flex: 1;
+  min-width: 4.5rem;
+  font-size: var(--text-base);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-accent, #2e619f);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.job-site-breakdown__row:not(:has(.job-site-breakdown__metrics)) .job-site-breakdown__time {
+  flex: none;
   flex-shrink: 0;
 }
 

@@ -42,6 +42,10 @@ const translations = {
     "entry.heading": "Daily time entry",
     "form.userName": "Name",
     "form.userNamePlaceholder": "Your name",
+    "form.hourlyRate": "Hourly rate",
+    "form.hourlyRatePlaceholder": "0.00",
+    "form.hourlyRateHelp":
+      "Pay rate for this job site. Used to calculate pay owed on exported PDFs.",
     "form.date": "Date",
     "form.dateHint": "Defaults to today.",
     "form.jobSite": "Job site",
@@ -66,6 +70,7 @@ const translations = {
     "entries.deleteAll": "Delete all entries",
     "table.date": "Date",
     "table.jobSite": "Job site",
+    "table.hourlyRate": "Hourly rate",
     "table.start": "Start",
     "table.breakStart": "Break start",
     "table.breakEnd": "Break end",
@@ -74,12 +79,16 @@ const translations = {
     "table.actions": "Actions",
     "summary.weekHeading": "All saved entries",
     "summary.allSaved": "All saved entries",
-    "summary.totalUnit": "total",
+    "summary.totalUnit": "total hours",
+    "summary.totalPay": "total pay owed",
+    "summary.noSitePay": "Pay (no job site listed)",
     "summary.noSiteAria": "Hours with no job site",
     "summary.noSiteLabel": "Hours (no job site listed)",
+    "breakdown.hours": "Hours",
+    "breakdown.pay": "Pay owed",
     "breakdown.title": "All entries by job site",
     "breakdown.subtitle":
-      "Hours grouped by job site. Entries with no job site listed are included only in the total above.",
+      "Hours and pay grouped by job site. Entries with no job site listed are included only in the totals above.",
     "dialog.deleteTitle": "Delete entry",
     "dialog.deleteMessage": "Are you sure you want to delete this entry?",
     "dialog.deleteAllTitle": "Delete all entries?",
@@ -112,6 +121,9 @@ const translations = {
     "pdf.summarySection": "Summary",
     "pdf.summaryTotalHours": "Total hours",
     "pdf.summaryByJobSite": "Hours by job site",
+    "pdf.payOwed": "Pay owed",
+    "pdf.hourlyRate": "Hourly rate",
+    "pdf.summaryTotalPay": "Total pay owed",
     "pdf.noJobSite": "No job site listed",
     "pdf.continued": "(cont.)",
   },
@@ -127,6 +139,10 @@ const translations = {
     "entry.heading": "Entrada diaria de tiempo",
     "form.userName": "Nombre",
     "form.userNamePlaceholder": "Tu nombre",
+    "form.hourlyRate": "Tarifa por hora",
+    "form.hourlyRatePlaceholder": "0.00",
+    "form.hourlyRateHelp":
+      "Tarifa de pago para este sitio de trabajo. Se usa para calcular el pago adeudado en los PDF exportados.",
     "form.date": "Fecha",
     "form.dateHint": "Por defecto es la fecha de hoy.",
     "form.jobSite": "Obra / sitio",
@@ -151,6 +167,7 @@ const translations = {
     "entries.deleteAll": "Eliminar todas las entradas",
     "table.date": "Fecha",
     "table.jobSite": "Sitio de trabajo",
+    "table.hourlyRate": "Tarifa por hora",
     "table.start": "Inicio",
     "table.breakStart": "Inicio del descanso",
     "table.breakEnd": "Fin del descanso",
@@ -159,12 +176,16 @@ const translations = {
     "table.actions": "Acciones",
     "summary.weekHeading": "Todas las entradas guardadas",
     "summary.allSaved": "Todas las entradas guardadas",
-    "summary.totalUnit": "total",
+    "summary.totalUnit": "horas totales",
+    "summary.totalPay": "pago total adeudado",
+    "summary.noSitePay": "Pago (sin sitio de trabajo indicado)",
     "summary.noSiteAria": "Horas sin sitio de trabajo",
     "summary.noSiteLabel": "Horas (sin sitio de trabajo indicado)",
+    "breakdown.hours": "Horas",
+    "breakdown.pay": "Pago adeudado",
     "breakdown.title": "Todas las entradas por sitio de trabajo",
     "breakdown.subtitle":
-      "Horas agrupadas por sitio de trabajo. Las entradas sin sitio de trabajo indicado se incluyen solo en el total de arriba.",
+      "Horas y pago agrupados por sitio de trabajo. Las entradas sin sitio de trabajo indicado se incluyen solo en los totales de arriba.",
     "dialog.deleteTitle": "Eliminar entrada",
     "dialog.deleteMessage": "¿Estás seguro de que quieres eliminar esta entrada?",
     "dialog.deleteAllTitle": "¿Eliminar todas las entradas?",
@@ -198,6 +219,9 @@ const translations = {
     "pdf.summarySection": "Resumen",
     "pdf.summaryTotalHours": "Horas totales",
     "pdf.summaryByJobSite": "Horas por sitio de trabajo",
+    "pdf.payOwed": "Pago adeudado",
+    "pdf.hourlyRate": "Tarifa por hora",
+    "pdf.summaryTotalPay": "Pago total adeudado",
     "pdf.noJobSite": "Sin sitio de trabajo indicado",
     "pdf.continued": "(cont.)",
   },
@@ -237,6 +261,69 @@ function saveUserNameToStorage(value) {
   } catch (_) {
     /* ignore */
   }
+}
+
+function parseHourlyRate(value) {
+  if (value === null || value === undefined) return null;
+  const trimmed = String(value).trim();
+  if (!trimmed) return null;
+  const parsed = Number(trimmed);
+  if (Number.isNaN(parsed) || parsed < 0) return null;
+  return parsed;
+}
+
+function getEntryHourlyRate(entry) {
+  return parseHourlyRate(entry?.hourlyRate);
+}
+
+function getHourlyRateFromForm() {
+  if (!hourlyRateInput) return null;
+  return parseHourlyRate(hourlyRateInput.value);
+}
+
+function calculatePayFromMinutes(totalMinutes, hourlyRate) {
+  return (totalMinutes / 60) * hourlyRate;
+}
+
+function formatPayAmount(amount) {
+  const locale = currentLang === "es" ? "es-US" : "en-US";
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+
+function formatHourlyRateDisplay(rate) {
+  const parsed = parseHourlyRate(rate);
+  if (parsed === null) return t("table.emptyCell");
+  return formatPayAmount(parsed);
+}
+
+function formatEntryPayDisplay(entry) {
+  const rate = getEntryHourlyRate(entry);
+  if (rate === null) return t("table.emptyCell");
+  return formatPayAmount(calculatePayFromMinutes(entry.totalMinutes, rate));
+}
+
+function entriesIncludePayData(sortedEntries) {
+  return sortedEntries.some((entry) => getEntryHourlyRate(entry) !== null);
+}
+
+function getTotalPayFromEntries(sortedEntries) {
+  let total = 0;
+  let hasPay = false;
+
+  for (const entry of sortedEntries) {
+    const rate = getEntryHourlyRate(entry);
+    if (rate !== null) {
+      total += calculatePayFromMinutes(entry.totalMinutes, rate);
+      hasPay = true;
+    }
+  }
+
+  return hasPay ? total : null;
 }
 
 /** Trimmed name for PDF header; uses the field if present, else storage. */
@@ -282,6 +369,7 @@ function refreshAllTranslatedUI() {
   updateFormTotalDisplay({ preserveFormError: true });
   refreshFormError();
   renderEntriesTable();
+  updateWeeklyTotal();
   updateWeeklyJobSiteBreakdown();
 }
 
@@ -459,6 +547,7 @@ function persistFormDraftToStorage() {
   const payload = {
     date: dateInput.value || getTodayDateString(),
     jobSite: jobSiteInput ? jobSiteInput.value || "" : "",
+    hourlyRate: hourlyRateInput ? hourlyRateInput.value || "" : "",
     startTime: startInput ? startInput.value || "" : "",
     breakStart: breakStartInput ? breakStartInput.value || "" : "",
     breakEnd: breakEndInput ? breakEndInput.value || "" : "",
@@ -558,6 +647,9 @@ function loadFormDraftFromStorage() {
     if (jobSiteInput && typeof d.jobSite === "string") {
       jobSiteInput.value = d.jobSite;
     }
+    if (hourlyRateInput && typeof d.hourlyRate === "string") {
+      hourlyRateInput.value = d.hourlyRate;
+    }
 
     if (d.editingId && typeof d.editingId === "string") {
       const exists = entries.some((e) => e.id === d.editingId);
@@ -609,13 +701,17 @@ let breakEndInput;
 let endInput;
 let jobSiteInput;
 let userNameInput;
+let hourlyRateInput;
 let formTotalDisplay;
 let formErrorElement;
 let clearFormButton;
 let editingIdInput;
 let entriesTableBody;
 let weeklyTotalElement;
+let weeklyTotalPayElement;
 let weeklyNoSiteTotalElement;
+let weeklyNoSitePayElement;
+let weeklyNoSitePayRowElement;
 let weeklyJobSiteListElement;
 
 let deleteConfirmDialog;
@@ -649,7 +745,7 @@ function refreshFormError() {
 // - reset the date to today
 // - leave optional break fields empty
 // - exit edit mode
-function clearForm() {
+function clearForm(options = {}) {
   dateInput.value = getTodayDateString();
   // Default start and end times assume a typical 9–5 schedule.
   // You can still change these values before saving.
@@ -658,6 +754,7 @@ function clearForm() {
   breakEndInput.value = "";
   endInput.value = "17:00";
   if (jobSiteInput) jobSiteInput.value = "";
+  if (!options.preserveHourlyRate && hourlyRateInput) hourlyRateInput.value = "";
   editingEntryId = null;
   editingIdInput.value = "";
   setFormError(null);
@@ -668,6 +765,10 @@ function clearForm() {
 function populateFormFromEntry(entry) {
   dateInput.value = entry.date;
   if (jobSiteInput) jobSiteInput.value = (entry.jobSite || "").trim();
+  if (hourlyRateInput) {
+    const rate = getEntryHourlyRate(entry);
+    hourlyRateInput.value = rate !== null ? String(rate) : "";
+  }
   startInput.value = entry.startTime;
   breakStartInput.value = entry.breakStart || "";
   breakEndInput.value = entry.breakEnd || "";
@@ -861,24 +962,41 @@ function buildExportPdfBasename(sortedEntries) {
 }
 
 function getJobSiteSummaryRows(sortedEntries) {
-  /** @type {Map<string, { label: string; minutes: number }>} */
+  /** @type {Map<string, { label: string; minutes: number; pay: number; hasPay: boolean }>} */
   const byKey = new Map();
 
   for (const entry of sortedEntries) {
     const trimmed = (entry.jobSite || "").trim();
     const key = normalizeJobSiteKey(trimmed);
     const label = trimmed || t("pdf.noJobSite");
+    const rate = getEntryHourlyRate(entry);
+    const entryPay = rate !== null ? calculatePayFromMinutes(entry.totalMinutes, rate) : 0;
     const existing = byKey.get(key);
 
     if (existing) {
       existing.minutes += entry.totalMinutes;
+      if (rate !== null) {
+        existing.pay += entryPay;
+        existing.hasPay = true;
+      }
     } else {
-      byKey.set(key, { label, minutes: entry.totalMinutes });
+      byKey.set(key, {
+        label,
+        minutes: entry.totalMinutes,
+        pay: entryPay,
+        hasPay: rate !== null,
+      });
     }
   }
 
   return Array.from(byKey.values()).sort((a, b) =>
     a.label.localeCompare(b.label, undefined, { sensitivity: "base" })
+  );
+}
+
+function getNamedJobSiteSummaryRows(sortedEntries) {
+  return getJobSiteSummaryRows(sortedEntries).filter(
+    (row) => normalizeJobSiteKey(row.label === t("pdf.noJobSite") ? "" : row.label) !== "__none__"
   );
 }
 
@@ -1073,23 +1191,31 @@ function buildPdfTimesheetBlob() {
     panelAlt: [0.985, 0.987, 0.99],
     accent: [0.18, 0.38, 0.63],
   };
+  const contentRight = pageWidth - marginRight - 12;
   const cols = {
-    date: 42,
-    jobSite: 96,
-    start: 230,
-    breakStart: 292,
-    breakEnd: 366,
-    end: 442,
-    totalRight: 560,
+    date: marginLeft,
+    jobSite: 100,
+    hourlyRateRight: 166,
+    hourlyRateWidth: 48,
+    start: 174,
+    breakStart: 224,
+    breakEnd: 274,
+    end: 324,
+    totalWidth: 42,
+    payWidth: 50,
+    totalRight: contentRight - 50 - 8,
+    payRight: contentRight,
   };
   const pages = [];
   const summaryRows = getJobSiteSummaryRows(sorted);
   const dateRange = getDateRangeLabel(sorted);
   const workerName = getUserNameForPdf().trim();
+  const hasPayData = entriesIncludePayData(sorted);
   const pdfMainTitle = workerName
     ? `${workerName} ${dateRange}`
     : `${t("pdf.title")} ${dateRange}`;
   const totalMinutes = sorted.reduce((sum, entry) => sum + entry.totalMinutes, 0);
+  const totalPay = getTotalPayFromEntries(sorted);
   let y = topMargin;
   let ops = [];
 
@@ -1174,6 +1300,13 @@ function buildPdfTimesheetBlob() {
       font: "bold",
       color: colors.muted,
     });
+    addTextRight(
+      truncatePdfText(t("table.hourlyRate"), cols.hourlyRateWidth, 8),
+      cols.hourlyRateRight,
+      y + 15,
+      8,
+      { font: "bold", color: colors.muted, maxWidth: cols.hourlyRateWidth }
+    );
     addText(t("table.start"), cols.start, y + 15, 8, { font: "bold", color: colors.muted });
     addText(t("table.breakStart"), cols.breakStart, y + 15, 8, {
       font: "bold",
@@ -1187,8 +1320,15 @@ function buildPdfTimesheetBlob() {
     addTextRight(t("table.total"), cols.totalRight, y + 15, 8, {
       font: "bold",
       color: colors.muted,
-      maxWidth: 56,
+      maxWidth: cols.totalWidth,
     });
+    addTextRight(
+      truncatePdfText(t("pdf.payOwed"), cols.payWidth, 8),
+      cols.payRight,
+      y + 15,
+      8,
+      { font: "bold", color: colors.muted, maxWidth: cols.payWidth }
+    );
     y += 24;
   };
 
@@ -1223,10 +1363,21 @@ function buildPdfTimesheetBlob() {
 
     addText(entry.date, cols.date, y + 14, 8);
     addText(
-      truncatePdfText(displayJobSiteCell(entry), cols.start - cols.jobSite - 10, 8),
+      truncatePdfText(
+        displayJobSiteCell(entry),
+        cols.hourlyRateRight - cols.jobSite - 10,
+        8
+      ),
       cols.jobSite,
       y + 14,
       8
+    );
+    addTextRight(
+      formatHourlyRateDisplay(entry.hourlyRate),
+      cols.hourlyRateRight,
+      y + 14,
+      8,
+      { maxWidth: cols.hourlyRateWidth }
     );
     addText(formatTimeTo12Hour(entry.startTime), cols.start, y + 14, 8);
     addText(
@@ -1247,8 +1398,11 @@ function buildPdfTimesheetBlob() {
       cols.totalRight,
       y + 14,
       8,
-      { maxWidth: 56 }
+      { maxWidth: cols.totalWidth }
     );
+    addTextRight(formatEntryPayDisplay(entry), cols.payRight, y + 14, 8, {
+      maxWidth: cols.payWidth,
+    });
     addLine(marginLeft, y + rowHeight, pageWidth - marginRight, colors.border, 0.6);
     y += rowHeight;
   });
@@ -1258,14 +1412,35 @@ function buildPdfTimesheetBlob() {
   ensureSpace(28);
   addText(`${t("pdf.summaryTotalHours")}:`, marginLeft, y + 2, 10, { color: colors.muted });
   addText(formatMinutesAsHoursString(totalMinutes), marginLeft + 110, y + 2, 12, { font: "bold" });
+  if (totalPay !== null) {
+    y += 22;
+    addText(`${t("pdf.summaryTotalPay")}:`, marginLeft, y + 2, 10, { color: colors.muted });
+    addText(formatPayAmount(totalPay), marginLeft + 110, y + 2, 12, { font: "bold" });
+  }
   y += 22;
   addLine(marginLeft, y, pageWidth - marginRight, colors.border, 1);
   y += 18;
   addText(t("pdf.summaryByJobSite"), marginLeft, y, 11, { font: "bold" });
   y += 14;
 
+  if (hasPayData) {
+    addTextRight(t("table.total"), pageWidth - marginRight - 110, y, 9, {
+      color: colors.muted,
+      maxWidth: 90,
+    });
+    addTextRight(t("pdf.payOwed"), pageWidth - marginRight - 10, y, 9, {
+      color: colors.muted,
+      maxWidth: 90,
+    });
+    y += 14;
+  }
+
   summaryRows.forEach((row, index) => {
-    const wrappedName = wrapPdfText(row.label, usableWidth - 130, 10);
+    const wrappedName = wrapPdfText(
+      row.label,
+      usableWidth - (hasPayData ? 220 : 130),
+      10
+    );
     const rowHeight = Math.max(24, wrappedName.length * 12 + 8);
     ensureSpace(rowHeight + 4, { continued: true });
 
@@ -1276,13 +1451,20 @@ function buildPdfTimesheetBlob() {
     wrappedName.forEach((line, lineIndex) => {
       addText(line, marginLeft + 10, y + 16 + lineIndex * 12, 10);
     });
-    addTextRight(
-      formatMinutesAsHoursString(row.minutes),
-      pageWidth - marginRight - 10,
-      y + 16,
-      10,
-      { font: "bold", maxWidth: 90 }
-    );
+    const hoursRight = hasPayData ? pageWidth - marginRight - 110 : pageWidth - marginRight - 10;
+    addTextRight(formatMinutesAsHoursString(row.minutes), hoursRight, y + 16, 10, {
+      font: "bold",
+      maxWidth: 90,
+    });
+    if (hasPayData) {
+      addTextRight(
+        row.hasPay ? formatPayAmount(row.pay) : t("table.emptyCell"),
+        pageWidth - marginRight - 10,
+        y + 16,
+        10,
+        { font: "bold", maxWidth: 90 }
+      );
+    }
     addLine(marginLeft, y + rowHeight, pageWidth - marginRight, colors.border, 0.6);
     y += rowHeight;
   });
@@ -1358,7 +1540,7 @@ function renderEntriesTable() {
   if (sorted.length === 0) {
     const row = document.createElement("tr");
     const cell = document.createElement("td");
-    cell.colSpan = 8;
+    cell.colSpan = 9;
     cell.textContent = t("empty.noEntries");
     row.appendChild(cell);
     entriesTableBody.appendChild(row);
@@ -1376,6 +1558,10 @@ function renderEntriesTable() {
     const jobSiteCell = document.createElement("td");
     jobSiteCell.textContent = displayJobSiteCell(entry);
     jobSiteCell.className = "data-table__jobsite";
+
+    const hourlyRateCell = document.createElement("td");
+    hourlyRateCell.textContent = formatHourlyRateDisplay(entry.hourlyRate);
+    hourlyRateCell.className = "data-table__rate";
 
     const startCell = document.createElement("td");
     startCell.textContent = formatTimeTo12Hour(entry.startTime);
@@ -1423,6 +1609,7 @@ function renderEntriesTable() {
 
     row.appendChild(dateCell);
     row.appendChild(jobSiteCell);
+    row.appendChild(hourlyRateCell);
     row.appendChild(startCell);
     row.appendChild(breakStartCell);
     row.appendChild(breakEndCell);
@@ -1441,19 +1628,44 @@ function renderEntriesTable() {
 function updateWeeklyTotal() {
   let totalMinutes = 0;
   let noSiteMinutes = 0;
+  let noSitePay = 0;
+  let noSiteHasPay = false;
 
   for (const entry of entries) {
     totalMinutes += entry.totalMinutes;
+    const rate = getEntryHourlyRate(entry);
+    const entryPay = rate !== null ? calculatePayFromMinutes(entry.totalMinutes, rate) : 0;
+
     if (!(entry.jobSite || "").trim()) {
       noSiteMinutes += entry.totalMinutes;
+      if (rate !== null) {
+        noSitePay += entryPay;
+        noSiteHasPay = true;
+      }
     }
   }
 
   weeklyTotalElement.textContent = formatMinutesAsHoursString(totalMinutes);
 
+  if (weeklyTotalPayElement) {
+    const totalPay = getTotalPayFromEntries(entries);
+    weeklyTotalPayElement.textContent =
+      totalPay !== null ? formatPayAmount(totalPay) : t("table.emptyCell");
+  }
+
   if (weeklyNoSiteTotalElement) {
     weeklyNoSiteTotalElement.textContent =
       formatMinutesAsHoursString(noSiteMinutes);
+  }
+
+  if (weeklyNoSitePayElement) {
+    weeklyNoSitePayElement.textContent = noSiteHasPay
+      ? formatPayAmount(noSitePay)
+      : t("table.emptyCell");
+  }
+
+  if (weeklyNoSitePayRowElement) {
+    weeklyNoSitePayRowElement.hidden = !noSiteHasPay && noSiteMinutes === 0;
   }
 }
 
@@ -1461,26 +1673,12 @@ function updateWeeklyTotal() {
 function updateWeeklyJobSiteBreakdown() {
   if (!weeklyJobSiteListElement) return;
   const allEntries = getSortedEntries();
-
-  /** @type {Map<string, { label: string; minutes: number }>} */
-  const byKey = new Map();
-
-  for (const entry of allEntries) {
-    const trimmed = (entry.jobSite || "").trim();
-    if (!trimmed) continue;
-
-    const key = normalizeJobSiteKey(trimmed);
-    const prev = byKey.get(key);
-    if (prev) {
-      prev.minutes += entry.totalMinutes;
-    } else {
-      byKey.set(key, { label: trimmed, minutes: entry.totalMinutes });
-    }
-  }
+  const rows = getNamedJobSiteSummaryRows(allEntries);
+  const showPay = entriesIncludePayData(allEntries);
 
   weeklyJobSiteListElement.innerHTML = "";
 
-  if (byKey.size === 0) {
+  if (rows.length === 0) {
     const li = document.createElement("li");
     li.className = "job-site-breakdown__empty";
     li.textContent =
@@ -1491,15 +1689,31 @@ function updateWeeklyJobSiteBreakdown() {
     return;
   }
 
-  const rows = Array.from(byKey.entries()).map(([key, data]) => ({
-    key,
-    label: data.label,
-    minutes: data.minutes,
-  }));
+  if (showPay) {
+    const header = document.createElement("li");
+    header.className = "job-site-breakdown__header";
 
-  rows.sort((a, b) =>
-    a.label.localeCompare(b.label, undefined, { sensitivity: "base" })
-  );
+    const headerName = document.createElement("span");
+    headerName.className = "job-site-breakdown__name";
+    headerName.textContent = t("table.jobSite");
+
+    const headerMetrics = document.createElement("div");
+    headerMetrics.className = "job-site-breakdown__metrics";
+
+    const headerHours = document.createElement("span");
+    headerHours.className = "job-site-breakdown__metric-label";
+    headerHours.textContent = t("breakdown.hours");
+
+    const headerPay = document.createElement("span");
+    headerPay.className = "job-site-breakdown__metric-label";
+    headerPay.textContent = t("breakdown.pay");
+
+    headerMetrics.appendChild(headerHours);
+    headerMetrics.appendChild(headerPay);
+    header.appendChild(headerName);
+    header.appendChild(headerMetrics);
+    weeklyJobSiteListElement.appendChild(header);
+  }
 
   for (const row of rows) {
     const li = document.createElement("li");
@@ -1513,8 +1727,23 @@ function updateWeeklyJobSiteBreakdown() {
     time.className = "job-site-breakdown__time";
     time.textContent = formatMinutesAsHoursString(row.minutes);
 
-    li.appendChild(name);
-    li.appendChild(time);
+    if (showPay) {
+      const metrics = document.createElement("div");
+      metrics.className = "job-site-breakdown__metrics";
+
+      const pay = document.createElement("span");
+      pay.className = "job-site-breakdown__pay";
+      pay.textContent = row.hasPay ? formatPayAmount(row.pay) : t("table.emptyCell");
+
+      metrics.appendChild(time);
+      metrics.appendChild(pay);
+      li.appendChild(name);
+      li.appendChild(metrics);
+    } else {
+      li.appendChild(name);
+      li.appendChild(time);
+    }
+
     weeklyJobSiteListElement.appendChild(li);
   }
 }
@@ -1527,6 +1756,7 @@ function handleFormSubmit(event) {
 
   const date = dateInput.value || getTodayDateString();
   const jobSite = jobSiteInput ? jobSiteInput.value.trim() : "";
+  const hourlyRate = getHourlyRateFromForm();
   const start = startInput.value;
   const brkStart = breakStartInput.value;
   const brkEnd = breakEndInput.value;
@@ -1553,6 +1783,7 @@ function handleFormSubmit(event) {
         ...entries[index],
         date,
         jobSite,
+        hourlyRate,
         startTime: start,
         breakStart: brkStart || null,
         breakEnd: brkEnd || null,
@@ -1567,6 +1798,7 @@ function handleFormSubmit(event) {
       id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
       date,
       jobSite,
+      hourlyRate,
       startTime: start,
       breakStart: brkStart || null,
       breakEnd: brkEnd || null,
@@ -1583,9 +1815,13 @@ function handleFormSubmit(event) {
   updateWeeklyTotal();
   updateWeeklyJobSiteBreakdown();
 
-  // Reset edit mode and optionally keep the date filled with today's date.
-  clearForm();
-  clearFormDraftFromStorage();
+  // Reset edit mode; keep the hourly rate for the next entry at this job site.
+  const savedHourlyRate = hourlyRateInput ? hourlyRateInput.value : "";
+  clearForm({ preserveHourlyRate: true });
+  if (hourlyRateInput && savedHourlyRate.trim()) {
+    hourlyRateInput.value = savedHourlyRate;
+  }
+  persistFormDraftToStorage();
 }
 
 // Initialize the app once the HTML document has loaded.
@@ -1599,13 +1835,17 @@ document.addEventListener("DOMContentLoaded", () => {
   endInput = document.getElementById("end-time");
   jobSiteInput = document.getElementById("job-site");
   userNameInput = document.getElementById("user-name");
+  hourlyRateInput = document.getElementById("hourly-rate");
   formTotalDisplay = document.getElementById("form-total-display");
   formErrorElement = document.getElementById("form-error");
   clearFormButton = document.getElementById("clear-form");
   editingIdInput = document.getElementById("editing-id");
   entriesTableBody = document.querySelector("#entries-table tbody");
   weeklyTotalElement = document.getElementById("weekly-total");
+  weeklyTotalPayElement = document.getElementById("weekly-total-pay");
   weeklyNoSiteTotalElement = document.getElementById("weekly-no-site-total");
+  weeklyNoSitePayElement = document.getElementById("weekly-no-site-pay");
+  weeklyNoSitePayRowElement = document.getElementById("weekly-no-site-pay-row");
   weeklyJobSiteListElement = document.getElementById("weekly-job-site-list");
 
   deleteConfirmDialog = document.getElementById("delete-confirm-dialog");
@@ -1692,6 +1932,10 @@ document.addEventListener("DOMContentLoaded", () => {
   endInput.addEventListener("input", onFormFieldChange);
   if (jobSiteInput) {
     jobSiteInput.addEventListener("input", onFormFieldChange);
+  }
+  if (hourlyRateInput) {
+    hourlyRateInput.addEventListener("input", onFormFieldChange);
+    hourlyRateInput.addEventListener("change", onFormFieldChange);
   }
 
   // Handle "Save entry" button click (no form submission, no network requests).

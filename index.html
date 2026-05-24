@@ -102,6 +102,31 @@
               </p>
             </div>
 
+            <div class="form-field form-field--full">
+              <label class="form-label" for="hourly-rate" data-i18n="form.hourlyRate"
+                >Hourly rate</label
+              >
+              <div class="input-with-prefix">
+                <span class="input-with-prefix__symbol" aria-hidden="true">$</span>
+                <input
+                  class="form-input input-with-prefix__input"
+                  type="number"
+                  id="hourly-rate"
+                  name="hourly-rate"
+                  min="0"
+                  step="0.01"
+                  inputmode="decimal"
+                  data-i18n-placeholder="form.hourlyRatePlaceholder"
+                  placeholder="0.00"
+                  autocomplete="off"
+                  aria-describedby="hourly-rate-help"
+                />
+              </div>
+              <p class="form-hint" id="hourly-rate-help" data-i18n="form.hourlyRateHelp">
+                Pay rate for this job site. Used to calculate pay owed on exported PDFs.
+              </p>
+            </div>
+
             <div class="form-section">
               <h3 class="form-section__title" data-i18n="workTime.title">Work time</h3>
               <div class="form-grid">
@@ -209,6 +234,7 @@
                 <tr>
                   <th scope="col" data-i18n="table.date">Date</th>
                   <th scope="col" data-i18n="table.jobSite">Job site</th>
+                  <th scope="col" data-i18n="table.hourlyRate">Hourly rate</th>
                   <th scope="col" data-i18n="table.start">Start</th>
                   <th scope="col" data-i18n="table.breakStart">Break start</th>
                   <th scope="col" data-i18n="table.breakEnd">Break end</th>
@@ -231,10 +257,18 @@
           </h2>
           <div class="weekly-summary__inner">
             <p class="weekly-summary__label" data-i18n="summary.allSaved">All saved entries</p>
-            <p class="weekly-summary__value">
-              <span id="weekly-total" class="weekly-summary__figure">0h 0m</span>
-              <span class="weekly-summary__unit" data-i18n="summary.totalUnit">total</span>
-            </p>
+            <div class="weekly-summary__totals">
+              <p class="weekly-summary__value">
+                <span id="weekly-total" class="weekly-summary__figure">0h 0m</span>
+                <span class="weekly-summary__unit" data-i18n="summary.totalUnit">total hours</span>
+              </p>
+              <p class="weekly-summary__value weekly-summary__value--pay">
+                <span id="weekly-total-pay" class="weekly-summary__figure weekly-summary__figure--pay"
+                  >—</span
+                >
+                <span class="weekly-summary__unit" data-i18n="summary.totalPay">total pay owed</span>
+              </p>
+            </div>
           </div>
           <div
             class="weekly-summary__no-site"
@@ -248,6 +282,18 @@
             >
             <span id="weekly-no-site-total" class="weekly-summary__no-site-value">0h 0m</span>
           </div>
+          <div
+            id="weekly-no-site-pay-row"
+            class="weekly-summary__no-site weekly-summary__no-site--pay"
+            role="status"
+            aria-live="polite"
+            hidden
+          >
+            <span class="weekly-summary__no-site-label" data-i18n="summary.noSitePay"
+              >Pay (no job site listed)</span
+            >
+            <span id="weekly-no-site-pay" class="weekly-summary__no-site-value">—</span>
+          </div>
         </section>
 
         <section
@@ -259,8 +305,8 @@
               All entries by job site
             </h2>
             <p class="card__subtitle" data-i18n="breakdown.subtitle">
-              Hours grouped by job site. Entries with no job site listed
-              are included only in the total above.
+              Hours and pay grouped by job site. Entries with no job site listed
+              are included only in the totals above.
             </p>
           </div>
           <ul
@@ -320,6 +366,6 @@
       </div>
     </div>
 
-    <script src="app.js?v=4" defer></script>
+    <script src="app.js?v=7" defer></script>
   </body>
 </html>
