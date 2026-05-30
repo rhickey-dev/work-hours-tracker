@@ -106,6 +106,10 @@ const translations = {
     "empty.noEntries": "No days saved yet. Add your first one above.",
     "table.edit": "Edit",
     "table.delete": "Delete",
+    "table.showMore": "Show more",
+    "table.showLess": "Show less",
+    "table.showMoreAria": "Show times, hourly rate, and break details for this day",
+    "table.showLessAria": "Hide times, hourly rate, and break details for this day",
     "breakdown.emptyNone": "No days saved yet.",
     "breakdown.emptyNoNamed":
       "No job sites added yet. Days with no job site are counted in the total at the top.",
@@ -218,6 +222,10 @@ const translations = {
     "empty.noEntries": "Todavía no hay días guardados. Agrega el primero arriba.",
     "table.edit": "Editar",
     "table.delete": "Eliminar",
+    "table.showMore": "Mostrar más",
+    "table.showLess": "Mostrar menos",
+    "table.showMoreAria": "Mostrar horarios, pago por hora y detalles del descanso de este día",
+    "table.showLessAria": "Ocultar horarios, pago por hora y detalles del descanso de este día",
     "breakdown.emptyNone": "Todavía no hay días guardados.",
     "breakdown.emptyNoNamed":
       "Todavía no hay sitios de trabajo. Los días sin sitio de trabajo se cuentan en el total de arriba.",
@@ -1806,6 +1814,7 @@ function renderEntriesTable() {
 
   for (const entry of sorted) {
     const row = document.createElement("tr");
+    row.className = "entry-row";
 
     const dateCell = document.createElement("td");
     dateCell.textContent = entry.date;
@@ -1818,33 +1827,59 @@ function renderEntriesTable() {
 
     const hourlyRateCell = document.createElement("td");
     hourlyRateCell.textContent = formatHourlyRateDisplay(entry.hourlyRate);
-    hourlyRateCell.className = "data-table__rate";
+    hourlyRateCell.className = "data-table__rate data-table__detail";
     hourlyRateCell.dataset.label = t("table.hourlyRate");
 
     const startCell = document.createElement("td");
     startCell.textContent = formatTimeTo12Hour(entry.startTime);
+    startCell.className = "data-table__detail";
     startCell.dataset.label = t("table.start");
 
     const breakStartCell = document.createElement("td");
     breakStartCell.textContent = entry.breakStart
       ? formatTimeTo12Hour(entry.breakStart)
       : t("table.emptyCell");
+    breakStartCell.className = "data-table__detail";
     breakStartCell.dataset.label = t("table.breakStart");
 
     const breakEndCell = document.createElement("td");
     breakEndCell.textContent = entry.breakEnd
       ? formatTimeTo12Hour(entry.breakEnd)
       : t("table.emptyCell");
+    breakEndCell.className = "data-table__detail";
     breakEndCell.dataset.label = t("table.breakEnd");
 
     const endCell = document.createElement("td");
     endCell.textContent = formatTimeTo12Hour(entry.endTime);
+    endCell.className = "data-table__detail";
     endCell.dataset.label = t("table.end");
 
     const totalCell = document.createElement("td");
     totalCell.textContent = formatMinutesAsHoursString(entry.totalMinutes);
     totalCell.dataset.label = t("table.total");
     totalCell.dataset.col = "total";
+
+    // "Show more / Show less" reveals times, hourly rate, and breaks; hidden by
+    // default so each saved day stays compact on every screen size.
+    const toggleCell = document.createElement("td");
+    toggleCell.dataset.col = "toggle";
+    const toggleButton = document.createElement("button");
+    toggleButton.type = "button";
+    toggleButton.className = "btn-toggle-details";
+    const setToggleState = (expanded) => {
+      row.classList.toggle("is-expanded", expanded);
+      toggleButton.setAttribute("aria-expanded", String(expanded));
+      toggleButton.textContent = expanded ? t("table.showLess") : t("table.showMore");
+      toggleButton.setAttribute(
+        "aria-label",
+        expanded ? t("table.showLessAria") : t("table.showMoreAria")
+      );
+    };
+    setToggleState(false);
+    toggleButton.addEventListener("click", () => {
+      setToggleState(!row.classList.contains("is-expanded"));
+    });
+    toggleCell.appendChild(toggleButton);
 
     const actionsCell = document.createElement("td");
     actionsCell.dataset.label = t("table.actions");
@@ -1881,6 +1916,7 @@ function renderEntriesTable() {
     row.appendChild(breakEndCell);
     row.appendChild(endCell);
     row.appendChild(totalCell);
+    row.appendChild(toggleCell);
     row.appendChild(actionsCell);
 
     entriesTableBody.appendChild(row);
