@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Logo Options — Work Hours Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "DM Sans", system-ui, sans-serif;
+      background: #eef2f8;
+      color: #15233b;
+      min-height: 100vh;
+      padding: 48px 24px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #5a6678;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 48px;
+    }
+
+    .grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 32px;
+      justify-content: center;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 40px 32px 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      width: 220px;
+      box-shadow: 0 1px 2px rgba(20,35,60,.04), 0 10px 30px rgba(20,35,60,.08);
+    }
+
+    .card__label {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #5a6678;
+    }
+
+    .card__desc {
+      font-size: 0.8125rem;
+      color: #8898aa;
+      text-align: center;
+      line-height: 1.5;
+      margin-top: -10px;
+    }
+
+    /* Show each icon at two sizes */
+    .sizes {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .icon-wrap {
+      border-radius: 22%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #2563eb;
+      flex-shrink: 0;
+    }
+
+    .icon-wrap.lg { width: 80px; height: 80px; border-radius: 20px; }
+    .icon-wrap.sm { width: 44px; height: 44px; border-radius: 11px; }
+
+    .icon-wrap.white { background: #fff; border: 1.5px solid #e2e8f1; }
+  </style>
+</head>
+<body>
+
+<h1>Logo Options — Work Hours Tracker</h1>
+
+<div class="grid">
+
+  <!-- Option A: Bold Clock -->
+  <div class="card">
+    <div class="sizes">
+      <div class="icon-wrap lg">
+        <svg width="46" height="46" viewBox="0 0 46 46" fill="none">
+          <circle cx="23" cy="23" r="16" stroke="white" stroke-width="3"/>
+          <circle cx="23" cy="23" r="2.5" fill="white"/>
+          <line x1="23" y1="23" x2="23" y2="13" stroke="white" stroke-width="3" stroke-linecap="round"/>
+          <line x1="23" y1="23" x2="30" y2="27" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="icon-wrap sm">
+        <svg width="26" height="26" viewBox="0 0 46 46" fill="none">
+          <circle cx="23" cy="23" r="16" stroke="white" stroke-width="3"/>
+          <circle cx="23" cy="23" r="2.5" fill="white"/>
+          <line x1="23" y1="23" x2="23" y2="13" stroke="white" stroke-width="3" stroke-linecap="round"/>
+          <line x1="23" y1="23" x2="30" y2="27" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+    <span class="card__label">A — Clock</span>
+    <p class="card__desc">Refined version of the current icon. Bolder, cleaner strokes.</p>
+  </div>
+
+  <!-- Option B: Hourglass -->
+  <div class="card">
+    <div class="sizes">
+      <div class="icon-wrap lg">
+        <svg width="46" height="46" viewBox="0 0 46 46" fill="none">
+          <path d="M15 9h16M15 37h16" stroke="white" stroke-width="3" stroke-linecap="round"/>
+          <path d="M16 9 C16 9 16 20 23 23 C30 26 30 37 30 37 L16 37 C16 37 16 26 23 23 C30 20 30 9 16 9Z" fill="white" opacity="0.25"/>
+          <path d="M30 9 C30 9 30 20 23 23 C16 26 16 37 16 37 L30 37 C30 37 30 26 23 23 C16 20 16 9 30 9Z" fill="white" opacity="0.15"/>
+          <path d="M16 9 L30 9 L23 23 L16 9Z" fill="white"/>
+          <path d="M16 37 L30 37 L23 28 L16 37Z" fill="white" opacity="0.5"/>
+        </svg>
+      </div>
+      <div class="icon-wrap sm">
+        <svg width="26" height="26" viewBox="0 0 46 46" fill="none">
+          <path d="M15 9h16M15 37h16" stroke="white" stroke-width="3" stroke-linecap="round"/>
+          <path d="M16 9 L30 9 L23 23 L16 9Z" fill="white"/>
+          <path d="M16 37 L30 37 L23 28 L16 37Z" fill="white" opacity="0.5"/>
+        </svg>
+      </div>
+    </div>
+    <span class="card__label">B — Hourglass</span>
+    <p class="card__desc">Classic time symbol. Bold, immediately recognizable.</p>
+  </div>
+
+  <!-- Option C: Stopwatch -->
+  <div class="card">
+    <div class="sizes">
+      <div class="icon-wrap lg">
+        <svg width="46" height="46" viewBox="0 0 46 46" fill="none">
+          <!-- button on top -->
+          <rect x="19.5" y="8" width="7" height="4" rx="2" fill="white"/>
+          <!-- crown ears -->
+          <line x1="14" y1="13" x2="11" y2="10" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="32" y1="13" x2="35" y2="10" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+          <!-- main face -->
+          <circle cx="23" cy="27" r="13" stroke="white" stroke-width="3"/>
+          <!-- hand -->
+          <line x1="23" y1="27" x2="23" y2="19" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="23" cy="27" r="2" fill="white"/>
+        </svg>
+      </div>
+      <div class="icon-wrap sm">
+        <svg width="26" height="26" viewBox="0 0 46 46" fill="none">
+          <rect x="19.5" y="8" width="7" height="4" rx="2" fill="white"/>
+          <circle cx="23" cy="27" r="13" stroke="white" stroke-width="3"/>
+          <line x1="23" y1="27" x2="23" y2="19" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="23" cy="27" r="2" fill="white"/>
+        </svg>
+      </div>
+    </div>
+    <span class="card__label">C — Stopwatch</span>
+    <p class="card__desc">Feels active and precise. Strong "tracking" association.</p>
+  </div>
+
+  <!-- Option D: Checkmark + Clock hybrid -->
+  <div class="card">
+    <div class="sizes">
+      <div class="icon-wrap lg">
+        <svg width="46" height="46" viewBox="0 0 46 46" fill="none">
+          <!-- outer ring, open at bottom-right -->
+          <path d="M23 9 A14 14 0 1 1 37 23" stroke="white" stroke-width="3" stroke-linecap="round" fill="none"/>
+          <!-- checkmark replacing the arc gap -->
+          <polyline points="31,19 22,31 17,25" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <!-- center dot -->
+          <circle cx="23" cy="23" r="2" fill="white"/>
+          <!-- hour hand -->
+          <line x1="23" y1="23" x2="23" y2="15" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="icon-wrap sm">
+        <svg width="26" height="26" viewBox="0 0 46 46" fill="none">
+          <path d="M23 9 A14 14 0 1 1 37 23" stroke="white" stroke-width="3" stroke-linecap="round" fill="none"/>
+          <polyline points="31,19 22,31 17,25" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <circle cx="23" cy="23" r="2" fill="white"/>
+          <line x1="23" y1="23" x2="23" y2="15" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+    <span class="card__label">D — Clock + Check</span>
+    <p class="card__desc">Time + done. Signals logging and completion in one mark.</p>
+  </div>
+
+  <!-- Option E: Minimalist "W" monogram -->
+  <div class="card">
+    <div class="sizes">
+      <div class="icon-wrap lg">
+        <svg width="46" height="46" viewBox="0 0 46 46" fill="none">
+          <!-- subtle clock arc behind -->
+          <circle cx="23" cy="23" r="13" stroke="white" stroke-width="1.5" opacity="0.25"/>
+          <!-- bold W letterform -->
+          <polyline points="11,15 16,31 23,22 30,31 35,15" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </div>
+      <div class="icon-wrap sm">
+        <svg width="26" height="26" viewBox="0 0 46 46" fill="none">
+          <circle cx="23" cy="23" r="13" stroke="white" stroke-width="1.5" opacity="0.25"/>
+          <polyline points="11,15 16,31 23,22 30,31 35,15" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </div>
+    </div>
+    <span class="card__label">E — "W" Monogram</span>
+    <p class="card__desc">Minimal letter mark for Work. Unique, modern, brand-ready.</p>
+  </div>
+
+</div>
+
+<p style="text-align:center; margin-top: 48px; font-size: 0.8125rem; color: #8898aa;">
+  Each icon shown at app-icon size (80 × 80) and small/favicon size (44 × 44)
+</p>
+
+</body>
+</html>

@@ -33,87 +33,94 @@ const translations = {
   en: {
     "meta.title": "Work Hours Tracker",
     "lang.switcherLabel": "Language",
-    "lang.switcherHint": "Choose interface language",
+    "lang.switcherHint": "Choose your language",
     "lang.en": "English",
     "lang.es": "Español",
     "header.eyebrow": "Time tracker",
     "header.title": "Work Hours Tracker",
-    "header.lede": "Track daily work time and your running total.",
-    "entry.heading": "Daily time entry",
-    "form.userName": "Name",
-    "form.userNamePlaceholder": "Your name",
+    "header.lede": "Write down the hours you work each day and watch your totals add up.",
+    "summary.title": "Your totals",
+    "entry.heading": "Add a work day",
+    "entry.subtitle": "Fill in the boxes below, then press Save.",
+    "form.now": "Now",
+    "form.nowAria": "Use the time right now",
+    "form.userName": "Your name",
+    "form.userNameHelp": "This appears at the top of your PDF.",
+    "form.userNamePlaceholder": "Type your name",
+    "toast.saved": "Saved!",
+    "toast.updated": "Changes saved",
     "form.hourlyRate": "Hourly rate",
     "form.hourlyRatePlaceholder": "0.00",
     "form.hourlyRateHelp":
-      "Pay rate for this job site. Used to calculate pay owed on exported PDFs.",
+      "How much you get paid per hour. We use this to calculate your pay. (You can use a different hourly rate for each job site.)",
     "form.date": "Date",
-    "form.dateHint": "Defaults to today.",
+    "form.dateHint": "Today is already filled in. Tap it to pick a different day.",
     "form.jobSite": "Job site",
-    "form.jobSitePlaceholder": "Site name or address (optional)",
+    "form.jobSitePlaceholder": "Location name or address (optional)",
     "form.jobSiteHelp":
-      "(Optional) Leave blank to include hours only in the combined total. Named sites are grouped below.",
-    "workTime.title": "Work time",
-    "form.start": "Start",
-    "form.end": "End",
+      "If you fill this in, your hours for each location are added up separately below.",
+    "workTime.title": "Start and end time",
+    "form.start": "Start time",
+    "form.end": "End time",
     "break.title": "Break",
-    "break.optional": "(optional)",
-    "break.start": "Break start",
-    "break.end": "Break end",
-    "form.totalPrompt": "Enter all times to see today’s total hours.",
-    "form.totalInvalid": "Check your times above.",
-    "form.totalForDay": "Total for this day: {time}",
-    "form.saveEntry": "Save entry",
-    "form.clearForm": "Clear form",
-    "entries.heading": "Saved entries",
-    "entries.subtitle": "Stored locally in your browser only.",
-    "entries.export": "Export",
-    "entries.deleteAll": "Delete all entries",
+    "break.optional": "(only if you took one)",
+    "break.start": "Break started",
+    "break.end": "Break ended",
+    "form.totalPrompt": "Fill in your start and end time to see your hours.",
+    "form.totalInvalid": "Those times don’t add up. Please check them.",
+    "form.totalForDay": "Hours worked this day: {time}",
+    "form.saveEntry": "Save this day",
+    "form.clearForm": "Start over",
+    "entries.heading": "Your saved days",
+    "entries.subtitle": "Saved on this device only. Nothing is sent anywhere.",
+    "entries.export": "Download PDF",
+    "entries.deleteAll": "Delete all",
     "table.date": "Date",
     "table.jobSite": "Job site",
     "table.hourlyRate": "Hourly rate",
-    "table.start": "Start",
-    "table.breakStart": "Break start",
-    "table.breakEnd": "Break end",
-    "table.end": "End",
-    "table.total": "Total",
-    "table.actions": "Actions",
-    "summary.weekHeading": "All saved entries",
-    "summary.allSaved": "All saved entries",
+    "table.start": "Start time",
+    "table.breakStart": "Break started",
+    "table.breakEnd": "Break ended",
+    "table.end": "End time",
+    "table.total": "Hours",
+    "table.actions": "Edit or delete",
+    "summary.weekHeading": "All saved days",
+    "summary.allSaved": "All saved days",
     "summary.totalUnit": "total hours",
-    "summary.totalPay": "total pay owed",
-    "summary.noSitePay": "Pay (no job site listed)",
-    "summary.noSiteAria": "Hours with no job site",
-    "summary.noSiteLabel": "Hours (no job site listed)",
+    "summary.totalPay": "total pay",
+    "summary.noSitePay": "Pay for days with no job site",
+    "summary.noSiteAria": "Hours for days with no job site",
+    "summary.noSiteLabel": "Hours for days with no job site",
     "breakdown.hours": "Hours",
-    "breakdown.pay": "Pay owed",
-    "breakdown.title": "All entries by job site",
+    "breakdown.pay": "Pay",
+    "breakdown.title": "Totals for each job site",
     "breakdown.subtitle":
-      "Hours and pay grouped by job site. Entries with no job site listed are included only in the totals above.",
-    "dialog.deleteTitle": "Delete entry",
-    "dialog.deleteMessage": "Are you sure you want to delete this entry?",
-    "dialog.deleteAllTitle": "Delete all entries?",
+      "Your hours and pay added up for each job site. Days with no job site are only counted in the totals at the top.",
+    "dialog.deleteTitle": "Delete this day?",
+    "dialog.deleteMessage": "This removes this day for good. Are you sure?",
+    "dialog.deleteAllTitle": "Delete everything?",
     "dialog.deleteAllMessage":
-      "This removes every saved entry from this browser. This cannot be undone.",
-    "dialog.no": "No",
-    "dialog.yes": "Yes",
-    "empty.noEntries": "No entries yet. Add your first one above.",
+      "This deletes every day you’ve saved. You can’t undo this.",
+    "dialog.no": "Cancel",
+    "dialog.yes": "Delete",
+    "empty.noEntries": "No days saved yet. Add your first one above.",
     "table.edit": "Edit",
     "table.delete": "Delete",
-    "breakdown.emptyNone": "No entries yet.",
+    "breakdown.emptyNone": "No days saved yet.",
     "breakdown.emptyNoNamed":
-      "No named job sites yet. Hours without a site are included in the total above.",
-    "errors.needDateStartEnd": "Please enter at least a date, start time, and end time.",
+      "No job sites added yet. Days with no job site are counted in the total at the top.",
+    "errors.needDateStartEnd": "Please fill in the date, start time, and end time.",
     "errors.invalidTimeCombination":
-      "The times you entered do not look valid. Please check them.",
+      "Those times don’t look right. Please check them and try again.",
     "time.am": "a.m.",
     "time.pm": "p.m.",
     "format.hoursMinutes": "{hours}h {minutes}m",
     "table.emptyCell": "—",
-    "table.editAria": "Edit this entry",
-    "table.deleteAria": "Delete this entry",
-    "dialog.closeBackdrop": "Close dialog",
-    "breakdown.listAria": "Hours totals grouped by job site",
-    "entries.tableCaption": "Saved work time entries",
+    "table.editAria": "Edit this day",
+    "table.deleteAria": "Delete this day",
+    "dialog.closeBackdrop": "Close",
+    "breakdown.listAria": "Hours and pay for each job site",
+    "entries.tableCaption": "Your saved work days",
     "pdf.title": "Work Hours Timesheet",
     "pdf.name": "Name",
     "pdf.dateRange": "Date range",
@@ -122,96 +129,111 @@ const translations = {
     "pdf.summaryTotalHours": "Total hours",
     "pdf.summaryByJobSite": "Hours by job site",
     "pdf.payOwed": "Pay owed",
+    "pdf.payColumn": "Pay",
+    "pdf.brkStart": "Brk start",
+    "pdf.brkEnd": "Brk end",
     "pdf.hourlyRate": "Hourly rate",
     "pdf.summaryTotalPay": "Total pay owed",
     "pdf.noJobSite": "No job site listed",
     "pdf.continued": "(cont.)",
+    "pdf.eyebrow": "Work hours timesheet",
+    "pdf.jobSites": "Job sites",
+    "pdf.entriesCount": "Entries logged",
+    "pdf.generated": "Generated {date}",
+    "pdf.pageOf": "Page {current} of {total}",
   },
   es: {
     "meta.title": "Rastreador de horas de trabajo",
     "lang.switcherLabel": "Idioma",
-    "lang.switcherHint": "Elige el idioma de la interfaz",
+    "lang.switcherHint": "Elige tu idioma",
     "lang.en": "English",
     "lang.es": "Español",
     "header.eyebrow": "Rastreador de tiempo",
     "header.title": "Rastreador de horas de trabajo",
-    "header.lede": "Rastrea el tiempo diario de trabajo y tu total acumulado.",
-    "entry.heading": "Entrada diaria de tiempo",
-    "form.userName": "Nombre",
-    "form.userNamePlaceholder": "Tu nombre",
-    "form.hourlyRate": "Tarifa por hora",
+    "header.lede": "Anota las horas que trabajas cada día y mira cómo suman tus totales.",
+    "summary.title": "Tus totales",
+    "entry.heading": "Agregar un día de trabajo",
+    "entry.subtitle": "Completa las casillas de abajo y presiona Guardar.",
+    "form.now": "Ahora",
+    "form.nowAria": "Usar la hora actual",
+    "form.userName": "Tu nombre",
+    "form.userNameHelp": "Aparece en la parte superior de tu PDF.",
+    "form.userNamePlaceholder": "Escribe tu nombre",
+    "toast.saved": "¡Guardado!",
+    "toast.updated": "Cambios guardados",
+    "form.hourlyRate": "Pago por hora",
     "form.hourlyRatePlaceholder": "0.00",
     "form.hourlyRateHelp":
-      "Tarifa de pago para este sitio de trabajo. Se usa para calcular el pago adeudado en los PDF exportados.",
+      "Cuánto te pagan por una hora. Lo usamos para calcular tu pago. Puedes usar una cantidad distinta para cada sitio de trabajo.",
     "form.date": "Fecha",
-    "form.dateHint": "Por defecto es la fecha de hoy.",
-    "form.jobSite": "Obra / sitio",
-    "form.jobSitePlaceholder": "Nombre del sitio o dirección (opcional)",
+    "form.dateHint": "Hoy ya está puesto. Tócalo para elegir otro día.",
+    "form.jobSite": "Sitio de trabajo",
+    "form.jobSitePlaceholder": "Nombre del lugar o dirección (puedes dejarlo vacío)",
     "form.jobSiteHelp":
-      "(Opcional) Déjalo en blanco para incluir las horas solo en el total combinado. Los sitios con nombre se agrupan abajo.",
-    "workTime.title": "Tiempo de trabajo",
-    "form.start": "Inicio",
-    "form.end": "Fin",
+      "Si lo completas, tus horas de cada lugar se suman por separado abajo.",
+    "workTime.title": "Hora de inicio y de fin",
+    "form.start": "Hora de inicio",
+    "form.end": "Hora de fin",
     "break.title": "Descanso",
-    "break.optional": "(opcional)",
-    "break.start": "Inicio del descanso",
-    "break.end": "Fin del descanso",
-    "form.totalPrompt": "Ingresa todas las horas para ver el total de hoy.",
-    "form.totalInvalid": "Revisa tus horas arriba.",
-    "form.totalForDay": "Total de este día: {time}",
-    "form.saveEntry": "Guardar entrada",
-    "form.clearForm": "Borrar formulario",
-    "entries.heading": "Entradas guardadas",
-    "entries.subtitle": "Guardadas localmente solo en tu navegador.",
-    "entries.export": "Exportar",
-    "entries.deleteAll": "Eliminar todas las entradas",
+    "break.optional": "(solo si tomaste uno)",
+    "break.start": "Empezó el descanso",
+    "break.end": "Terminó el descanso",
+    "form.totalPrompt": "Pon tu hora de inicio y de fin para ver tus horas.",
+    "form.totalInvalid": "Esas horas no cuadran. Por favor revísalas.",
+    "form.totalForDay": "Horas trabajadas este día: {time}",
+    "form.saveEntry": "Guardar este día",
+    "form.clearForm": "Empezar de nuevo",
+    "entries.heading": "Tus días guardados",
+    "entries.subtitle": "Se guardan solo en este dispositivo. No se envía nada a ningún lado.",
+    "entries.export": "Descargar PDF",
+    "entries.deleteAll": "Eliminar todo",
     "table.date": "Fecha",
     "table.jobSite": "Sitio de trabajo",
-    "table.hourlyRate": "Tarifa por hora",
-    "table.start": "Inicio",
-    "table.breakStart": "Inicio del descanso",
-    "table.breakEnd": "Fin del descanso",
-    "table.end": "Fin",
-    "table.total": "Total",
-    "table.actions": "Acciones",
-    "summary.weekHeading": "Todas las entradas guardadas",
-    "summary.allSaved": "Todas las entradas guardadas",
-    "summary.totalUnit": "horas totales",
-    "summary.totalPay": "pago total adeudado",
-    "summary.noSitePay": "Pago (sin sitio de trabajo indicado)",
-    "summary.noSiteAria": "Horas sin sitio de trabajo",
-    "summary.noSiteLabel": "Horas (sin sitio de trabajo indicado)",
+    "table.hourlyRate": "Pago por hora",
+    "table.start": "Hora de inicio",
+    "table.breakStart": "Empezó el descanso",
+    "table.breakEnd": "Terminó el descanso",
+    "table.end": "Hora de fin",
+    "table.total": "Horas",
+    "table.actions": "Editar o eliminar",
+    "summary.weekHeading": "Todos los días guardados",
+    "summary.allSaved": "Todos los días guardados",
+    "summary.totalUnit": "horas en total",
+    "summary.totalPay": "pago total",
+    "summary.noSitePay": "Pago de días sin sitio de trabajo",
+    "summary.noSiteAria": "Horas de días sin sitio de trabajo",
+    "summary.noSiteLabel": "Horas de días sin sitio de trabajo",
     "breakdown.hours": "Horas",
-    "breakdown.pay": "Pago adeudado",
-    "breakdown.title": "Todas las entradas por sitio de trabajo",
+    "breakdown.pay": "Pago",
+    "breakdown.title": "Totales por sitio de trabajo",
     "breakdown.subtitle":
-      "Horas y pago agrupados por sitio de trabajo. Las entradas sin sitio de trabajo indicado se incluyen solo en los totales de arriba.",
-    "dialog.deleteTitle": "Eliminar entrada",
-    "dialog.deleteMessage": "¿Estás seguro de que quieres eliminar esta entrada?",
-    "dialog.deleteAllTitle": "¿Eliminar todas las entradas?",
+      "Tus horas y pago sumados por cada sitio de trabajo. Los días sin sitio de trabajo solo se cuentan en los totales de arriba.",
+    "dialog.deleteTitle": "¿Eliminar este día?",
+    "dialog.deleteMessage": "Esto elimina este día para siempre. ¿Seguro?",
+    "dialog.deleteAllTitle": "¿Eliminar todo?",
     "dialog.deleteAllMessage":
-      "Esto elimina todas las entradas guardadas de este navegador. Esto no se puede deshacer.",
-    "dialog.no": "No",
-    "dialog.yes": "Sí",
-    "empty.noEntries": "Todavía no hay entradas. Agrega la primera arriba.",
+      "Esto elimina todos los días que guardaste. No se puede deshacer.",
+    "dialog.no": "Cancelar",
+    "dialog.yes": "Eliminar",
+    "empty.noEntries": "Todavía no hay días guardados. Agrega el primero arriba.",
     "table.edit": "Editar",
     "table.delete": "Eliminar",
-    "breakdown.emptyNone": "Todavía no hay entradas.",
+    "breakdown.emptyNone": "Todavía no hay días guardados.",
     "breakdown.emptyNoNamed":
-      "Todavía no hay sitios de trabajo con nombre. Las horas sin sitio están incluidas en el total de arriba.",
+      "Todavía no hay sitios de trabajo. Los días sin sitio de trabajo se cuentan en el total de arriba.",
     "errors.needDateStartEnd":
-      "Ingresa al menos una fecha, una hora de inicio y una hora de fin.",
+      "Por favor completa la fecha, la hora de inicio y la hora de fin.",
     "errors.invalidTimeCombination":
-      "Las horas que ingresaste no parecen válidas. Por favor revísalas.",
+      "Esas horas no parecen correctas. Por favor revísalas e inténtalo de nuevo.",
     "time.am": "a. m.",
     "time.pm": "p. m.",
     "format.hoursMinutes": "{hours} h {minutes} min",
     "table.emptyCell": "—",
-    "table.editAria": "Editar esta entrada",
-    "table.deleteAria": "Eliminar esta entrada",
-    "dialog.closeBackdrop": "Cerrar diálogo",
-    "breakdown.listAria": "Totales de horas agrupados por sitio de trabajo",
-    "entries.tableCaption": "Entradas guardadas de tiempo de trabajo",
+    "table.editAria": "Editar este día",
+    "table.deleteAria": "Eliminar este día",
+    "dialog.closeBackdrop": "Cerrar",
+    "breakdown.listAria": "Horas y pago por cada sitio de trabajo",
+    "entries.tableCaption": "Tus días de trabajo guardados",
     "pdf.title": "Hoja de horas de trabajo",
     "pdf.name": "Nombre",
     "pdf.dateRange": "Rango de fechas",
@@ -220,14 +242,24 @@ const translations = {
     "pdf.summaryTotalHours": "Horas totales",
     "pdf.summaryByJobSite": "Horas por sitio de trabajo",
     "pdf.payOwed": "Pago adeudado",
+    "pdf.payColumn": "Pago",
+    "pdf.brkStart": "In. desc.",
+    "pdf.brkEnd": "Fin desc.",
     "pdf.hourlyRate": "Tarifa por hora",
     "pdf.summaryTotalPay": "Pago total adeudado",
     "pdf.noJobSite": "Sin sitio de trabajo indicado",
     "pdf.continued": "(cont.)",
+    "pdf.eyebrow": "Hoja de horas de trabajo",
+    "pdf.jobSites": "Sitios de trabajo",
+    "pdf.entriesCount": "Entradas registradas",
+    "pdf.generated": "Generado {date}",
+    "pdf.pageOf": "Página {current} de {total}",
   },
 };
 
 let currentLang = "en";
+/** When true, PDF export uses English labels and en-US formatting regardless of UI language. */
+let exportPdfInEnglish = false;
 
 function loadSavedLanguage() {
   try {
@@ -286,7 +318,8 @@ function calculatePayFromMinutes(totalMinutes, hourlyRate) {
 }
 
 function formatPayAmount(amount) {
-  const locale = currentLang === "es" ? "es-US" : "en-US";
+  const lang = exportPdfInEnglish ? "en" : currentLang;
+  const locale = lang === "es" ? "es-US" : "en-US";
   return new Intl.NumberFormat(locale, {
     style: "currency",
     currency: "USD",
@@ -336,7 +369,8 @@ function getUserNameForPdf() {
 }
 
 function t(key, vars = {}) {
-  const table = translations[currentLang] || translations.en;
+  const lang = exportPdfInEnglish ? "en" : currentLang;
+  const table = translations[lang] || translations.en;
   let s = table[key] ?? translations.en[key] ?? key;
   for (const [k, v] of Object.entries(vars)) {
     s = s.replaceAll(`{${k}}`, String(v));
@@ -1000,16 +1034,147 @@ function getNamedJobSiteSummaryRows(sortedEntries) {
   );
 }
 
+// Windows-1252 (WinAnsi) code points that live outside Latin-1 (0x80–0x9F),
+// so we can render em dashes, curly quotes, etc. instead of "?".
+const PDF_CP1252_SPECIALS = {
+  0x20ac: 0x80, 0x201a: 0x82, 0x0192: 0x83, 0x201e: 0x84, 0x2026: 0x85,
+  0x2020: 0x86, 0x2021: 0x87, 0x02c6: 0x88, 0x2030: 0x89, 0x0160: 0x8a,
+  0x2039: 0x8b, 0x0152: 0x8c, 0x017d: 0x8e, 0x2018: 0x91, 0x2019: 0x92,
+  0x201c: 0x93, 0x201d: 0x94, 0x2022: 0x95, 0x2013: 0x96, 0x2014: 0x97,
+  0x02dc: 0x98, 0x2122: 0x99, 0x0161: 0x9a, 0x203a: 0x9b, 0x0153: 0x9c,
+  0x017e: 0x9e, 0x0178: 0x9f,
+};
+
+// Encode as a PDF string literal using WinAnsiEncoding. Output stays ASCII
+// (printable chars plus \ddd octal escapes) so byte length == string length,
+// which keeps /Length and xref offsets correct.
 function encodePdfText(value) {
-  return `(${String(value)
-    .replace(/\\/g, "\\\\")
-    .replace(/\(/g, "\\(")
-    .replace(/\)/g, "\\)")
-    .replace(/[^\x20-\x7E]/g, "?")})`;
+  let out = "";
+  for (const ch of String(value)) {
+    if (ch === "\\") {
+      out += "\\\\";
+      continue;
+    }
+    if (ch === "(") {
+      out += "\\(";
+      continue;
+    }
+    if (ch === ")") {
+      out += "\\)";
+      continue;
+    }
+    const code = ch.codePointAt(0);
+    if (code >= 0x20 && code <= 0x7e) {
+      out += ch;
+      continue;
+    }
+    let byte = null;
+    if (code >= 0xa0 && code <= 0xff) {
+      byte = code;
+    } else if (PDF_CP1252_SPECIALS[code] !== undefined) {
+      byte = PDF_CP1252_SPECIALS[code];
+    }
+    out += byte === null ? "?" : `\\${byte.toString(8).padStart(3, "0")}`;
+  }
+  return `(${out})`;
 }
 
-function estimatePdfTextWidth(text, size) {
-  return String(text).length * size * 0.52;
+function estimatePdfTextWidth(text, size, options = {}) {
+  const factor = options.bold ? 0.62 : 0.56;
+  return String(text).length * size * factor;
+}
+
+function pdfTextWidth(text, size, bold = false) {
+  return estimatePdfTextWidth(String(text ?? ""), size, { bold }) + 6;
+}
+
+function columnWidth(header, sampleValues, fontSize) {
+  let max = pdfTextWidth(header, fontSize, true);
+  for (const value of sampleValues) {
+    max = Math.max(max, pdfTextWidth(value, fontSize, false));
+  }
+  return max;
+}
+
+function buildEntriesPdfLayout(sorted, pageWidth, marginLeft, marginRight) {
+  const GAP = 12;
+  const INSET = 12;
+
+  function layoutForFontSize(fontSize) {
+    const usable = pageWidth - marginLeft - marginRight;
+    const tableLeft = marginLeft + INSET;
+    const tableRight = marginLeft + usable - INSET;
+    const timeCell = formatTimeTo12Hour("12:59");
+    const empty = t("table.emptyCell");
+
+    const rightSpecs = [
+      { key: "pay", header: t("pdf.payOwed"), samples: ["$9,999.99", empty] },
+      { key: "total", header: t("table.total"), samples: [formatMinutesAsHoursString(5999)] },
+      { key: "end", header: t("table.end"), samples: [timeCell] },
+      { key: "breakEnd", header: t("table.breakEnd"), samples: [timeCell, empty] },
+      { key: "breakStart", header: t("table.breakStart"), samples: [timeCell, empty] },
+      { key: "start", header: t("table.start"), samples: [timeCell] },
+      {
+        key: "hourlyRate",
+        header: t("table.hourlyRate"),
+        samples: ["$9,999.99", empty],
+        align: "right",
+      },
+    ];
+
+    let cursor = tableRight;
+    const columns = {};
+
+    for (const spec of rightSpecs) {
+      const width = columnWidth(spec.header, spec.samples, fontSize);
+      cursor -= width;
+      columns[spec.key] = {
+        x: cursor,
+        width,
+        right: cursor + width,
+        align: spec.align || "right",
+        header: spec.header,
+      };
+      cursor -= GAP;
+    }
+
+    const dateWidth = columnWidth(t("table.date"), ["2026-05-28"], fontSize);
+    let left = tableLeft;
+    columns.date = {
+      x: left,
+      width: dateWidth,
+      align: "left",
+      header: t("table.date"),
+    };
+    left += dateWidth + GAP;
+
+    const jobSiteMin = pdfTextWidth(t("table.jobSite"), fontSize, true);
+    const jobSiteWidth = Math.max(jobSiteMin, cursor - left);
+    columns.jobSite = {
+      x: left,
+      width: jobSiteWidth,
+      align: "left",
+      header: t("table.jobSite"),
+    };
+
+    const fits = left + jobSiteWidth <= cursor;
+    return {
+      fontSize,
+      tableLeft,
+      tableRight,
+      columns,
+      headerRowHeight: 26,
+      rowHeight: 22,
+      fits,
+    };
+  }
+
+  // Landscape gives plenty of room: prefer a comfortable, readable size and
+  // only step down if labels (e.g. longer Spanish headers) would not fit.
+  let layout = layoutForFontSize(9);
+  if (!layout.fits) layout = layoutForFontSize(8);
+  if (!layout.fits) layout = layoutForFontSize(7);
+  return layout;
 }
 
 function truncatePdfText(text, maxWidth, size) {
@@ -1137,8 +1302,8 @@ function createSimplePdf(pages, options = {}) {
   const objects = [
     "<< /Type /Catalog /Pages 2 0 R >>",
     `<< /Type /Pages /Kids [${kidsRefs}] /Count ${pageCount} >>`,
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>",
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>",
   ];
 
   for (let i = 0; i < pageCount; i += 1) {
@@ -1175,47 +1340,59 @@ function createSimplePdf(pages, options = {}) {
 }
 
 function buildPdfTimesheetBlob() {
+  exportPdfInEnglish = true;
+  try {
+    return buildPdfTimesheetBlobInner();
+  } finally {
+    exportPdfInEnglish = false;
+  }
+}
+
+function buildPdfTimesheetBlobInner() {
   const sorted = getSortedEntries();
-  const pageWidth = 612;
-  const pageHeight = 792;
-  const marginLeft = 42;
-  const marginRight = 42;
+  // Landscape Letter: 9 full-header columns plus long job-site names need the
+  // extra horizontal room to stay readable and never overlap.
+  const pageWidth = 792;
+  const pageHeight = 612;
+  const marginLeft = 48;
+  const marginRight = 48;
   const topMargin = 44;
-  const bottomMargin = 54;
+  const bottomMargin = 56;
   const usableWidth = pageWidth - marginLeft - marginRight;
+  const contentRight = marginLeft + usableWidth;
   const colors = {
-    ink: [0.12, 0.15, 0.19],
-    muted: [0.38, 0.42, 0.47],
-    border: [0.84, 0.86, 0.89],
-    panel: [0.96, 0.97, 0.98],
-    panelAlt: [0.985, 0.987, 0.99],
-    accent: [0.18, 0.38, 0.63],
+    ink: [0.12, 0.15, 0.2],
+    muted: [0.42, 0.46, 0.52],
+    faint: [0.58, 0.62, 0.68],
+    headInk: [0.22, 0.27, 0.34],
+    border: [0.85, 0.87, 0.9],
+    hair: [0.9, 0.92, 0.94],
+    rowAlt: [0.965, 0.972, 0.982],
+    headFill: [0.93, 0.945, 0.965],
+    cardFill: [0.962, 0.972, 0.985],
+    accent: [0.16, 0.36, 0.62],
+    accentSoft: [0.62, 0.71, 0.84],
+    onAccent: [1, 1, 1],
+    onAccentSoft: [0.8, 0.87, 0.96],
   };
-  const contentRight = pageWidth - marginRight - 12;
-  const cols = {
-    date: marginLeft,
-    jobSite: 100,
-    hourlyRateRight: 166,
-    hourlyRateWidth: 48,
-    start: 174,
-    breakStart: 224,
-    breakEnd: 274,
-    end: 324,
-    totalWidth: 42,
-    payWidth: 50,
-    totalRight: contentRight - 50 - 8,
-    payRight: contentRight,
-  };
+  const entryLayout = buildEntriesPdfLayout(sorted, pageWidth, marginLeft, marginRight);
+  const ec = entryLayout.columns;
+  const entryFontSize = entryLayout.fontSize;
   const pages = [];
   const summaryRows = getJobSiteSummaryRows(sorted);
+  const namedSiteRows = getNamedJobSiteSummaryRows(sorted);
   const dateRange = getDateRangeLabel(sorted);
   const workerName = getUserNameForPdf().trim();
   const hasPayData = entriesIncludePayData(sorted);
-  const pdfMainTitle = workerName
-    ? `${workerName} ${dateRange}`
-    : `${t("pdf.title")} ${dateRange}`;
+  const titleText = workerName || t("pdf.title");
   const totalMinutes = sorted.reduce((sum, entry) => sum + entry.totalMinutes, 0);
   const totalPay = getTotalPayFromEntries(sorted);
+  const totalHoursStr = formatMinutesAsHoursString(totalMinutes);
+  const totalPayStr = totalPay !== null ? formatPayAmount(totalPay) : null;
+  const now = new Date();
+  const generatedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
+    now.getDate()
+  ).padStart(2, "0")}`;
   let y = topMargin;
   let ops = [];
 
@@ -1238,9 +1415,13 @@ function buildPdfTimesheetBlob() {
   };
 
   const addTextRight = (text, rightX, textY, size = 10, options = {}) => {
-    const display = truncatePdfText(text, options.maxWidth || 160, size);
-    const width = estimatePdfTextWidth(display, size);
-    addText(display, rightX - width, textY, size, options);
+    const rightInset = options.rightInset ?? 8;
+    const maxWidth = options.maxWidth || 160;
+    const display = truncatePdfText(text, maxWidth, size);
+    const width = estimatePdfTextWidth(display, size, {
+      bold: options.font === "bold",
+    });
+    addText(display, rightX - width - rightInset, textY, size, options);
   };
 
   const addRect = (x, rectY, w, h, fillColor) => {
@@ -1254,229 +1435,302 @@ function buildPdfTimesheetBlob() {
   const ensureSpace = (height, options = {}) => {
     if (y + height <= pageHeight - bottomMargin) return;
     createPage();
-    drawPageHeader(options.continued === true);
+    drawHeaderBand(true);
     if (options.repeatTableHeader) {
-      y += 12;
       drawTableHeader();
     }
   };
 
-  const drawPageHeader = (continued = false) => {
-    addRect(marginLeft, y, usableWidth, 4, colors.accent);
-    y += 18;
-    const headerTitle = continued ? `${pdfMainTitle} ${t("pdf.continued")}` : pdfMainTitle;
-    addText(truncatePdfText(headerTitle, usableWidth - 8, 20), marginLeft, y, 20, {
+  // Branded header band. Full size on the first page; compact on continuations.
+  const drawHeaderBand = (continued = false) => {
+    const bandH = continued ? 36 : 74;
+    addRect(marginLeft, y, usableWidth, bandH, colors.accent);
+
+    if (continued) {
+      addText(`${titleText} ${t("pdf.continued")}`, marginLeft + 18, y + 23, 13, {
+        font: "bold",
+        color: colors.onAccent,
+      });
+      addTextRight(dateRange, contentRight - 18, y + 23, 10, {
+        color: colors.onAccentSoft,
+        maxWidth: usableWidth * 0.4,
+        rightInset: 0,
+      });
+      y += bandH + 16;
+      return;
+    }
+
+    addText(t("pdf.eyebrow").toUpperCase(), marginLeft + 20, y + 25, 8.5, {
       font: "bold",
+      color: colors.onAccentSoft,
     });
-    y += 22;
-    addText(
-      `${t("summary.allSaved")}: ${sorted.length}   ${t("pdf.summaryTotalHours")}: ${formatMinutesAsHoursString(totalMinutes)}`,
-      marginLeft,
-      y,
-      10,
-      { color: colors.muted }
-    );
-    y += 18;
-    addLine(marginLeft, y, pageWidth - marginRight, colors.border, 1);
-    y += 18;
+    addText(truncatePdfText(titleText, usableWidth * 0.6, 22), marginLeft + 20, y + 52, 22, {
+      font: "bold",
+      color: colors.onAccent,
+    });
+
+    addTextRight(t("pdf.dateRange").toUpperCase(), contentRight - 20, y + 25, 8.5, {
+      font: "bold",
+      color: colors.onAccentSoft,
+      maxWidth: usableWidth * 0.5,
+      rightInset: 0,
+    });
+    addTextRight(dateRange, contentRight - 20, y + 48, 13, {
+      font: "bold",
+      color: colors.onAccent,
+      maxWidth: usableWidth * 0.5,
+      rightInset: 0,
+    });
+    y += bandH + 22;
   };
 
   const drawSectionTitle = (title) => {
-    ensureSpace(26);
-    addText(title, marginLeft, y, 13, { font: "bold" });
-    y += 14;
+    ensureSpace(34);
+    addRect(marginLeft, y - 10, 4, 14, colors.accent);
+    addText(title, marginLeft + 13, y, 14, { font: "bold" });
+    y += 16;
   };
 
-  const drawSummaryCard = (label, value, x, cardY, w) => {
-    addRect(x, cardY, w, 54, colors.panel);
-    addText(label, x + 12, cardY + 17, 9, { color: colors.muted });
-    addText(value, x + 12, cardY + 39, 15, { font: "bold" });
+  const drawSummaryCards = () => {
+    const cards = [{ label: t("pdf.summaryTotalHours"), value: totalHoursStr }];
+    if (totalPayStr) {
+      cards.push({ label: t("pdf.summaryTotalPay"), value: totalPayStr, highlight: true });
+    }
+    cards.push({ label: t("pdf.entriesCount"), value: String(sorted.length) });
+    cards.push({ label: t("pdf.jobSites"), value: String(namedSiteRows.length) });
+
+    const cardH = 58;
+    const cardGap = 14;
+    const cardWidth = (usableWidth - cardGap * (cards.length - 1)) / cards.length;
+    ensureSpace(cardH + 6);
+    const top = y;
+
+    cards.forEach((card, index) => {
+      const x = marginLeft + index * (cardWidth + cardGap);
+      addRect(x, top, cardWidth, cardH, colors.cardFill);
+      addRect(x, top, 3.5, cardH, card.highlight ? colors.accent : colors.accentSoft);
+      addText(truncatePdfText(card.label, cardWidth - 22, 8.5), x + 14, top + 22, 8.5, {
+        color: colors.muted,
+      });
+      addText(truncatePdfText(card.value, cardWidth - 22, 16), x + 14, top + 45, 16, {
+        font: "bold",
+        color: card.highlight ? colors.accent : colors.ink,
+      });
+    });
+
+    y = top + cardH + 26;
   };
 
   const drawTableHeader = () => {
-    addRect(marginLeft, y, usableWidth, 24, colors.panel);
-    addText(t("table.date"), cols.date, y + 15, 8, { font: "bold", color: colors.muted });
-    addText(t("table.jobSite"), cols.jobSite, y + 15, 8, {
-      font: "bold",
-      color: colors.muted,
+    const headerH = entryLayout.headerRowHeight;
+    addRect(marginLeft, y, usableWidth, headerH, colors.headFill);
+    const hy = y + headerH - 8;
+    const headerStyle = { font: "bold", color: colors.headInk };
+
+    addText(ec.date.header, ec.date.x, hy, entryFontSize, headerStyle);
+    addText(ec.jobSite.header, ec.jobSite.x, hy, entryFontSize, headerStyle);
+    addTextRight(ec.hourlyRate.header, ec.hourlyRate.right, hy, entryFontSize, {
+      ...headerStyle,
+      maxWidth: ec.hourlyRate.width,
+      rightInset: 2,
     });
-    addTextRight(
-      truncatePdfText(t("table.hourlyRate"), cols.hourlyRateWidth, 8),
-      cols.hourlyRateRight,
-      y + 15,
-      8,
-      { font: "bold", color: colors.muted, maxWidth: cols.hourlyRateWidth }
-    );
-    addText(t("table.start"), cols.start, y + 15, 8, { font: "bold", color: colors.muted });
-    addText(t("table.breakStart"), cols.breakStart, y + 15, 8, {
-      font: "bold",
-      color: colors.muted,
+    addText(ec.start.header, ec.start.x, hy, entryFontSize, headerStyle);
+    addText(ec.breakStart.header, ec.breakStart.x, hy, entryFontSize, headerStyle);
+    addText(ec.breakEnd.header, ec.breakEnd.x, hy, entryFontSize, headerStyle);
+    addText(ec.end.header, ec.end.x, hy, entryFontSize, headerStyle);
+    addTextRight(ec.total.header, ec.total.right, hy, entryFontSize, {
+      ...headerStyle,
+      maxWidth: ec.total.width,
+      rightInset: 2,
     });
-    addText(t("table.breakEnd"), cols.breakEnd, y + 15, 8, {
-      font: "bold",
-      color: colors.muted,
+    addTextRight(ec.pay.header, ec.pay.right, hy, entryFontSize, {
+      ...headerStyle,
+      maxWidth: ec.pay.width,
+      rightInset: 2,
     });
-    addText(t("table.end"), cols.end, y + 15, 8, { font: "bold", color: colors.muted });
-    addTextRight(t("table.total"), cols.totalRight, y + 15, 8, {
-      font: "bold",
-      color: colors.muted,
-      maxWidth: cols.totalWidth,
-    });
-    addTextRight(
-      truncatePdfText(t("pdf.payOwed"), cols.payWidth, 8),
-      cols.payRight,
-      y + 15,
-      8,
-      { font: "bold", color: colors.muted, maxWidth: cols.payWidth }
-    );
-    y += 24;
+    addLine(marginLeft, y + headerH, contentRight, colors.accent, 1.2);
+    y += headerH;
   };
 
   createPage();
-  drawPageHeader(false);
-
-  ensureSpace(76);
-  const summaryTop = y;
-  const cardGap = 12;
-  const cardWidth = (usableWidth - cardGap * 2) / 3;
-  drawSummaryCard(t("pdf.summaryTotalHours"), formatMinutesAsHoursString(totalMinutes), marginLeft, summaryTop, cardWidth);
-  drawSummaryCard(t("summary.allSaved"), String(sorted.length), marginLeft + cardWidth + cardGap, summaryTop, cardWidth);
-  drawSummaryCard(
-    t("breakdown.title"),
-    String(summaryRows.length),
-    marginLeft + (cardWidth + cardGap) * 2,
-    summaryTop,
-    cardWidth
-  );
-  y += 72;
+  drawHeaderBand(false);
+  drawSummaryCards();
 
   drawSectionTitle(t("pdf.entriesSection"));
   drawTableHeader();
 
+  const emptyCell = t("table.emptyCell");
   sorted.forEach((entry, index) => {
-    const rowHeight = 22;
-    ensureSpace(rowHeight + 8, { repeatTableHeader: true, continued: true });
+    const rowHeight = entryLayout.rowHeight;
+    ensureSpace(rowHeight + 8, { repeatTableHeader: true });
 
-    if (index % 2 === 0) {
-      addRect(marginLeft, y, usableWidth, rowHeight, colors.panelAlt);
+    if (index % 2 === 1) {
+      addRect(marginLeft, y, usableWidth, rowHeight, colors.rowAlt);
     }
 
-    addText(entry.date, cols.date, y + 14, 8);
+    const ry = y + rowHeight - 7;
+
+    addText(entry.date, ec.date.x, ry, entryFontSize);
     addText(
-      truncatePdfText(
-        displayJobSiteCell(entry),
-        cols.hourlyRateRight - cols.jobSite - 10,
-        8
-      ),
-      cols.jobSite,
-      y + 14,
-      8
+      truncatePdfText(displayJobSiteCell(entry), ec.jobSite.width - 4, entryFontSize),
+      ec.jobSite.x,
+      ry,
+      entryFontSize
     );
-    addTextRight(
-      formatHourlyRateDisplay(entry.hourlyRate),
-      cols.hourlyRateRight,
-      y + 14,
-      8,
-      { maxWidth: cols.hourlyRateWidth }
-    );
-    addText(formatTimeTo12Hour(entry.startTime), cols.start, y + 14, 8);
+    addTextRight(formatHourlyRateDisplay(entry.hourlyRate), ec.hourlyRate.right, ry, entryFontSize, {
+      maxWidth: ec.hourlyRate.width,
+      rightInset: 2,
+    });
+    addText(formatTimeTo12Hour(entry.startTime), ec.start.x, ry, entryFontSize);
     addText(
-      entry.breakStart ? formatTimeTo12Hour(entry.breakStart) : t("table.emptyCell"),
-      cols.breakStart,
-      y + 14,
-      8
+      entry.breakStart ? formatTimeTo12Hour(entry.breakStart) : emptyCell,
+      ec.breakStart.x,
+      ry,
+      entryFontSize
     );
     addText(
-      entry.breakEnd ? formatTimeTo12Hour(entry.breakEnd) : t("table.emptyCell"),
-      cols.breakEnd,
-      y + 14,
-      8
+      entry.breakEnd ? formatTimeTo12Hour(entry.breakEnd) : emptyCell,
+      ec.breakEnd.x,
+      ry,
+      entryFontSize
     );
-    addText(formatTimeTo12Hour(entry.endTime), cols.end, y + 14, 8);
+    addText(formatTimeTo12Hour(entry.endTime), ec.end.x, ry, entryFontSize);
     addTextRight(
       formatMinutesAsHoursString(entry.totalMinutes),
-      cols.totalRight,
-      y + 14,
-      8,
-      { maxWidth: cols.totalWidth }
+      ec.total.right,
+      ry,
+      entryFontSize,
+      { font: "bold", maxWidth: ec.total.width, rightInset: 2 }
     );
-    addTextRight(formatEntryPayDisplay(entry), cols.payRight, y + 14, 8, {
-      maxWidth: cols.payWidth,
+    const entryPayText = formatEntryPayDisplay(entry);
+    addTextRight(entryPayText, ec.pay.right, ry, entryFontSize, {
+      font: entryPayText !== emptyCell ? "bold" : "regular",
+      maxWidth: ec.pay.width,
+      rightInset: 2,
     });
-    addLine(marginLeft, y + rowHeight, pageWidth - marginRight, colors.border, 0.6);
+    addLine(marginLeft, y + rowHeight, contentRight, colors.hair, 0.6);
     y += rowHeight;
   });
 
-  y += 18;
+  y += 26;
   drawSectionTitle(t("pdf.summarySection"));
-  ensureSpace(28);
-  addText(`${t("pdf.summaryTotalHours")}:`, marginLeft, y + 2, 10, { color: colors.muted });
-  addText(formatMinutesAsHoursString(totalMinutes), marginLeft + 110, y + 2, 12, { font: "bold" });
-  if (totalPay !== null) {
-    y += 22;
-    addText(`${t("pdf.summaryTotalPay")}:`, marginLeft, y + 2, 10, { color: colors.muted });
-    addText(formatPayAmount(totalPay), marginLeft + 110, y + 2, 12, { font: "bold" });
-  }
-  y += 22;
-  addLine(marginLeft, y, pageWidth - marginRight, colors.border, 1);
-  y += 18;
-  addText(t("pdf.summaryByJobSite"), marginLeft, y, 11, { font: "bold" });
-  y += 14;
 
-  if (hasPayData) {
-    addTextRight(t("table.total"), pageWidth - marginRight - 110, y, 9, {
-      color: colors.muted,
-      maxWidth: 90,
-    });
-    addTextRight(t("pdf.payOwed"), pageWidth - marginRight - 10, y, 9, {
-      color: colors.muted,
-      maxWidth: 90,
-    });
-    y += 14;
+  ensureSpace(30);
+  const labelGap = Math.max(
+    120,
+    pdfTextWidth(`${t("pdf.summaryTotalHours")}:`, 10, false),
+    pdfTextWidth(`${t("pdf.summaryTotalPay")}:`, 10, false)
+  );
+  addText(`${t("pdf.summaryTotalHours")}:`, marginLeft, y + 2, 10, { color: colors.muted });
+  addText(totalHoursStr, marginLeft + labelGap, y + 2, 13, { font: "bold" });
+  if (totalPayStr) {
+    y += 24;
+    addText(`${t("pdf.summaryTotalPay")}:`, marginLeft, y + 2, 10, { color: colors.muted });
+    addText(totalPayStr, marginLeft + labelGap, y + 2, 13, { font: "bold", color: colors.accent });
   }
+  y += 24;
+  addLine(marginLeft, y, contentRight, colors.border, 1);
+  y += 22;
+
+  addText(t("pdf.summaryByJobSite"), marginLeft, y, 12, { font: "bold" });
+  y += 16;
+
+  const summaryHoursRight = hasPayData
+    ? entryLayout.tableRight - ec.pay.width - ec.total.width - 24
+    : entryLayout.tableRight;
+
+  const drawJobSiteHeader = () => {
+    addRect(marginLeft, y, usableWidth, 22, colors.headFill);
+    const hy = y + 15;
+    addText(t("table.jobSite"), marginLeft + 12, hy, 9, {
+      font: "bold",
+      color: colors.headInk,
+    });
+    addTextRight(t("breakdown.hours"), summaryHoursRight, hy, 9, {
+      font: "bold",
+      color: colors.headInk,
+      maxWidth: ec.total.width + 20,
+      rightInset: 2,
+    });
+    if (hasPayData) {
+      addTextRight(t("pdf.payOwed"), entryLayout.tableRight, hy, 9, {
+        font: "bold",
+        color: colors.headInk,
+        maxWidth: ec.pay.width,
+        rightInset: 2,
+      });
+    }
+    addLine(marginLeft, y + 22, contentRight, colors.accent, 1.2);
+    y += 22;
+  };
+
+  ensureSpace(40);
+  drawJobSiteHeader();
 
   summaryRows.forEach((row, index) => {
-    const wrappedName = wrapPdfText(
-      row.label,
-      usableWidth - (hasPayData ? 220 : 130),
-      10
-    );
-    const rowHeight = Math.max(24, wrappedName.length * 12 + 8);
-    ensureSpace(rowHeight + 4, { continued: true });
+    const nameMaxWidth = hasPayData
+      ? summaryHoursRight - marginLeft - ec.total.width - 28
+      : entryLayout.tableRight - marginLeft - 24;
+    const wrappedName = wrapPdfText(row.label, nameMaxWidth, 10);
+    const rowHeight = Math.max(24, wrappedName.length * 13 + 8);
+    ensureSpace(rowHeight + 4);
 
-    if (index % 2 === 0) {
-      addRect(marginLeft, y, usableWidth, rowHeight, colors.panelAlt);
+    if (index % 2 === 1) {
+      addRect(marginLeft, y, usableWidth, rowHeight, colors.rowAlt);
     }
 
     wrappedName.forEach((line, lineIndex) => {
-      addText(line, marginLeft + 10, y + 16 + lineIndex * 12, 10);
+      addText(line, marginLeft + 12, y + 16 + lineIndex * 13, 10);
     });
-    const hoursRight = hasPayData ? pageWidth - marginRight - 110 : pageWidth - marginRight - 10;
-    addTextRight(formatMinutesAsHoursString(row.minutes), hoursRight, y + 16, 10, {
+    addTextRight(formatMinutesAsHoursString(row.minutes), summaryHoursRight, y + 16, 10, {
       font: "bold",
-      maxWidth: 90,
+      maxWidth: ec.total.width + 20,
+      rightInset: 2,
     });
     if (hasPayData) {
       addTextRight(
-        row.hasPay ? formatPayAmount(row.pay) : t("table.emptyCell"),
-        pageWidth - marginRight - 10,
+        row.hasPay ? formatPayAmount(row.pay) : emptyCell,
+        entryLayout.tableRight,
         y + 16,
         10,
-        { font: "bold", maxWidth: 90 }
+        { font: row.hasPay ? "bold" : "regular", maxWidth: ec.pay.width, rightInset: 2 }
       );
     }
-    addLine(marginLeft, y + rowHeight, pageWidth - marginRight, colors.border, 0.6);
+    addLine(marginLeft, y + rowHeight, contentRight, colors.hair, 0.6);
     y += rowHeight;
   });
 
+  const totalPages = pages.length;
   pages.forEach((pageOps, index) => {
+    const footY = pageHeight - 24;
+    pageOps.push({
+      type: "line",
+      x1: marginLeft,
+      y1: pageHeight - 38,
+      x2: contentRight,
+      y2: pageHeight - 38,
+      color: colors.hair,
+      width: 0.8,
+    });
     pageOps.push({
       type: "text",
-      text: `${index + 1}`,
-      x: pageWidth - marginRight,
-      y: pageHeight - 18,
-      size: 9,
-      color: colors.muted,
+      text: t("pdf.generated", { date: generatedDate }),
+      x: marginLeft,
+      y: footY,
+      size: 8.5,
+      color: colors.faint,
+      font: "regular",
+    });
+    const pageLabel = t("pdf.pageOf", { current: index + 1, total: totalPages });
+    const labelWidth = estimatePdfTextWidth(pageLabel, 8.5);
+    pageOps.push({
+      type: "text",
+      text: pageLabel,
+      x: contentRight - labelWidth,
+      y: footY,
+      size: 8.5,
+      color: colors.faint,
+      font: "regular",
     });
   });
 
@@ -1539,6 +1793,7 @@ function renderEntriesTable() {
 
   if (sorted.length === 0) {
     const row = document.createElement("tr");
+    row.className = "data-table__empty";
     const cell = document.createElement("td");
     cell.colSpan = 9;
     cell.textContent = t("empty.noEntries");
@@ -1554,35 +1809,46 @@ function renderEntriesTable() {
 
     const dateCell = document.createElement("td");
     dateCell.textContent = entry.date;
+    dateCell.dataset.label = t("table.date");
 
     const jobSiteCell = document.createElement("td");
     jobSiteCell.textContent = displayJobSiteCell(entry);
     jobSiteCell.className = "data-table__jobsite";
+    jobSiteCell.dataset.label = t("table.jobSite");
 
     const hourlyRateCell = document.createElement("td");
     hourlyRateCell.textContent = formatHourlyRateDisplay(entry.hourlyRate);
     hourlyRateCell.className = "data-table__rate";
+    hourlyRateCell.dataset.label = t("table.hourlyRate");
 
     const startCell = document.createElement("td");
     startCell.textContent = formatTimeTo12Hour(entry.startTime);
+    startCell.dataset.label = t("table.start");
 
     const breakStartCell = document.createElement("td");
     breakStartCell.textContent = entry.breakStart
       ? formatTimeTo12Hour(entry.breakStart)
       : t("table.emptyCell");
+    breakStartCell.dataset.label = t("table.breakStart");
 
     const breakEndCell = document.createElement("td");
     breakEndCell.textContent = entry.breakEnd
       ? formatTimeTo12Hour(entry.breakEnd)
       : t("table.emptyCell");
+    breakEndCell.dataset.label = t("table.breakEnd");
 
     const endCell = document.createElement("td");
     endCell.textContent = formatTimeTo12Hour(entry.endTime);
+    endCell.dataset.label = t("table.end");
 
     const totalCell = document.createElement("td");
     totalCell.textContent = formatMinutesAsHoursString(entry.totalMinutes);
+    totalCell.dataset.label = t("table.total");
+    totalCell.dataset.col = "total";
 
     const actionsCell = document.createElement("td");
+    actionsCell.dataset.label = t("table.actions");
+    actionsCell.dataset.col = "actions";
 
     // Edit button
     const editButton = document.createElement("button");
@@ -1748,6 +2014,41 @@ function updateWeeklyJobSiteBreakdown() {
   }
 }
 
+// Brief, friendly confirmation after saving so users know it worked.
+let saveToastTimer = null;
+function showSaveToast(messageKey) {
+  const toast = document.getElementById("save-toast");
+  const text = document.getElementById("save-toast-text");
+  if (!toast || !text) return;
+
+  text.textContent = t(messageKey);
+  toast.hidden = false;
+  // Force a reflow so the entry transition runs even on rapid repeats.
+  void toast.offsetWidth;
+  toast.classList.add("is-visible");
+
+  if (saveToastTimer) clearTimeout(saveToastTimer);
+  saveToastTimer = setTimeout(() => {
+    toast.classList.remove("is-visible");
+    setTimeout(() => {
+      toast.hidden = true;
+    }, 250);
+  }, 2200);
+}
+
+// Pad a number to two digits for "HH:MM" time-input values.
+function pad2(n) {
+  return String(n).padStart(2, "0");
+}
+
+// Fill a time field with the current clock time and refresh the live total.
+function setTimeFieldToNow(input) {
+  if (!input) return;
+  const now = new Date();
+  input.value = `${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
 // Handle form submission: validate input, update or create an entry,
 // save to localStorage, and re-render everything.
 function handleFormSubmit(event) {
@@ -1774,6 +2075,8 @@ function handleFormSubmit(event) {
     setFormError("errors.invalidTimeCombination");
     return;
   }
+
+  const wasEditing = Boolean(editingEntryId);
 
   if (editingEntryId) {
     // Update an existing entry.
@@ -1822,6 +2125,8 @@ function handleFormSubmit(event) {
     hourlyRateInput.value = savedHourlyRate;
   }
   persistFormDraftToStorage();
+
+  showSaveToast(wasEditing ? "toast.updated" : "toast.saved");
 }
 
 // Initialize the app once the HTML document has loaded.
@@ -1946,6 +2251,14 @@ document.addEventListener("DOMContentLoaded", () => {
       handleFormSubmit(e);
     });
   }
+
+  // "Now" quick-fill buttons set a time field to the current clock time.
+  document.querySelectorAll(".now-btn").forEach((button) => {
+    button.addEventListener("click", () => {
+      const targetId = button.getAttribute("data-now-target");
+      if (targetId) setTimeFieldToNow(document.getElementById(targetId));
+    });
+  });
 
   // Handle the clear button.
   clearFormButton.addEventListener("click", () => {
