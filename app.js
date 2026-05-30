@@ -122,10 +122,18 @@ const translations = {
     "pdf.summaryTotalHours": "Total hours",
     "pdf.summaryByJobSite": "Hours by job site",
     "pdf.payOwed": "Pay owed",
+    "pdf.payColumn": "Pay",
+    "pdf.brkStart": "Brk start",
+    "pdf.brkEnd": "Brk end",
     "pdf.hourlyRate": "Hourly rate",
     "pdf.summaryTotalPay": "Total pay owed",
     "pdf.noJobSite": "No job site listed",
     "pdf.continued": "(cont.)",
+    "pdf.eyebrow": "Work hours timesheet",
+    "pdf.jobSites": "Job sites",
+    "pdf.entriesCount": "Entries logged",
+    "pdf.generated": "Generated {date}",
+    "pdf.pageOf": "Page {current} of {total}",
   },
   es: {
     "meta.title": "Rastreador de horas de trabajo",
@@ -220,14 +228,24 @@ const translations = {
     "pdf.summaryTotalHours": "Horas totales",
     "pdf.summaryByJobSite": "Horas por sitio de trabajo",
     "pdf.payOwed": "Pago adeudado",
+    "pdf.payColumn": "Pago",
+    "pdf.brkStart": "In. desc.",
+    "pdf.brkEnd": "Fin desc.",
     "pdf.hourlyRate": "Tarifa por hora",
     "pdf.summaryTotalPay": "Pago total adeudado",
     "pdf.noJobSite": "Sin sitio de trabajo indicado",
     "pdf.continued": "(cont.)",
+    "pdf.eyebrow": "Hoja de horas de trabajo",
+    "pdf.jobSites": "Sitios de trabajo",
+    "pdf.entriesCount": "Entradas registradas",
+    "pdf.generated": "Generado {date}",
+    "pdf.pageOf": "Página {current} de {total}",
   },
 };
 
 let currentLang = "en";
+/** When true, PDF export uses English labels and en-US formatting regardless of UI language. */
+let exportPdfInEnglish = false;
 
 function loadSavedLanguage() {
   try {
@@ -286,7 +304,8 @@ function calculatePayFromMinutes(totalMinutes, hourlyRate) {
 }
 
 function formatPayAmount(amount) {
-  const locale = currentLang === "es" ? "es-US" : "en-US";
+  const lang = exportPdfInEnglish ? "en" : currentLang;
+  const locale = lang === "es" ? "es-US" : "en-US";
   return new Intl.NumberFormat(locale, {
     style: "currency",
     currency: "USD",
@@ -336,7 +355,8 @@ function getUserNameForPdf() {
 }
 
 function t(key, vars = {}) {
-  const table = translations[currentLang] || translations.en;
+  const lang = exportPdfInEnglish ? "en" : currentLang;
+  const table = translations[lang] || translations.en;
   let s = table[key] ?? translations.en[key] ?? key;
   for (const [k, v] of Object.entries(vars)) {
     s = s.replaceAll(`{${k}}`, String(v));
@@ -1000,16 +1020,147 @@ function getNamedJobSiteSummaryRows(sortedEntries) {
   );
 }
 
+// Windows-1252 (WinAnsi) code points that live outside Latin-1 (0x80–0x9F),
+// so we can render em dashes, curly quotes, etc. instead of "?".
+const PDF_CP1252_SPECIALS = {
+  0x20ac: 0x80, 0x201a: 0x82, 0x0192: 0x83, 0x201e: 0x84, 0x2026: 0x85,
+  0x2020: 0x86, 0x2021: 0x87, 0x02c6: 0x88, 0x2030: 0x89, 0x0160: 0x8a,
+  0x2039: 0x8b, 0x0152: 0x8c, 0x017d: 0x8e, 0x2018: 0x91, 0x2019: 0x92,
+  0x201c: 0x93, 0x201d: 0x94, 0x2022: 0x95, 0x2013: 0x96, 0x2014: 0x97,
+  0x02dc: 0x98, 0x2122: 0x99, 0x0161: 0x9a, 0x203a: 0x9b, 0x0153: 0x9c,
+  0x017e: 0x9e, 0x0178: 0x9f,
+};
+
+// Encode as a PDF string literal using WinAnsiEncoding. Output stays ASCII
+// (printable chars plus \ddd octal escapes) so byte length == string length,
+// which keeps /Length and xref offsets correct.
 function encodePdfText(value) {
-  return `(${String(value)
-    .replace(/\\/g, "\\\\")
-    .replace(/\(/g, "\\(")
-    .replace(/\)/g, "\\)")
-    .replace(/[^\x20-\x7E]/g, "?")})`;
+  let out = "";
+  for (const ch of String(value)) {
+    if (ch === "\\") {
+      out += "\\\\";
+      continue;
+    }
+    if (ch === "(") {
+      out += "\\(";
+      continue;
+    }
+    if (ch === ")") {
+      out += "\\)";
+      continue;
+    }
+    const code = ch.codePointAt(0);
+    if (code >= 0x20 && code <= 0x7e) {
+      out += ch;
+      continue;
+    }
+    let byte = null;
+    if (code >= 0xa0 && code <= 0xff) {
+      byte = code;
+    } else if (PDF_CP1252_SPECIALS[code] !== undefined) {
+      byte = PDF_CP1252_SPECIALS[code];
+    }
+    out += byte === null ? "?" : `\\${byte.toString(8).padStart(3, "0")}`;
+  }
+  return `(${out})`;
 }
 
-function estimatePdfTextWidth(text, size) {
-  return String(text).length * size * 0.52;
+function estimatePdfTextWidth(text, size, options = {}) {
+  const factor = options.bold ? 0.62 : 0.56;
+  return String(text).length * size * factor;
+}
+
+function pdfTextWidth(text, size, bold = false) {
+  return estimatePdfTextWidth(String(text ?? ""), size, { bold }) + 6;
+}
+
+function columnWidth(header, sampleValues, fontSize) {
+  let max = pdfTextWidth(header, fontSize, true);
+  for (const value of sampleValues) {
+    max = Math.max(max, pdfTextWidth(value, fontSize, false));
+  }
+  return max;
+}
+
+function buildEntriesPdfLayout(sorted, pageWidth, marginLeft, marginRight) {
+  const GAP = 12;
+  const INSET = 12;
+
+  function layoutForFontSize(fontSize) {
+    const usable = pageWidth - marginLeft - marginRight;
+    const tableLeft = marginLeft + INSET;
+    const tableRight = marginLeft + usable - INSET;
+    const timeCell = formatTimeTo12Hour("12:59");
+    const empty = t("table.emptyCell");
+
+    const rightSpecs = [
+      { key: "pay", header: t("pdf.payOwed"), samples: ["$9,999.99", empty] },
+      { key: "total", header: t("table.total"), samples: [formatMinutesAsHoursString(5999)] },
+      { key: "end", header: t("table.end"), samples: [timeCell] },
+      { key: "breakEnd", header: t("table.breakEnd"), samples: [timeCell, empty] },
+      { key: "breakStart", header: t("table.breakStart"), samples: [timeCell, empty] },
+      { key: "start", header: t("table.start"), samples: [timeCell] },
+      {
+        key: "hourlyRate",
+        header: t("table.hourlyRate"),
+        samples: ["$9,999.99", empty],
+        align: "right",
+      },
+    ];
+
+    let cursor = tableRight;
+    const columns = {};
+
+    for (const spec of rightSpecs) {
+      const width = columnWidth(spec.header, spec.samples, fontSize);
+      cursor -= width;
+      columns[spec.key] = {
+        x: cursor,
+        width,
+        right: cursor + width,
+        align: spec.align || "right",
+        header: spec.header,
+      };
+      cursor -= GAP;
+    }
+
+    const dateWidth = columnWidth(t("table.date"), ["2026-05-28"], fontSize);
+    let left = tableLeft;
+    columns.date = {
+      x: left,
+      width: dateWidth,
+      align: "left",
+      header: t("table.date"),
+    };
+    left += dateWidth + GAP;
+
+    const jobSiteMin = pdfTextWidth(t("table.jobSite"), fontSize, true);
+    const jobSiteWidth = Math.max(jobSiteMin, cursor - left);
+    columns.jobSite = {
+      x: left,
+      width: jobSiteWidth,
+      align: "left",
+      header: t("table.jobSite"),
+    };
+
+    const fits = left + jobSiteWidth <= cursor;
+    return {
+      fontSize,
+      tableLeft,
+      tableRight,
+      columns,
+      headerRowHeight: 26,
+      rowHeight: 22,
+      fits,
+    };
+  }
+
+  // Landscape gives plenty of room: prefer a comfortable, readable size and
+  // only step down if labels (e.g. longer Spanish headers) would not fit.
+  let layout = layoutForFontSize(9);
+  if (!layout.fits) layout = layoutForFontSize(8);
+  if (!layout.fits) layout = layoutForFontSize(7);
+  return layout;
 }
 
 function truncatePdfText(text, maxWidth, size) {
@@ -1137,8 +1288,8 @@ function createSimplePdf(pages, options = {}) {
   const objects = [
     "<< /Type /Catalog /Pages 2 0 R >>",
     `<< /Type /Pages /Kids [${kidsRefs}] /Count ${pageCount} >>`,
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>",
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>",
   ];
 
   for (let i = 0; i < pageCount; i += 1) {
@@ -1175,47 +1326,59 @@ function createSimplePdf(pages, options = {}) {
 }
 
 function buildPdfTimesheetBlob() {
+  exportPdfInEnglish = true;
+  try {
+    return buildPdfTimesheetBlobInner();
+  } finally {
+    exportPdfInEnglish = false;
+  }
+}
+
+function buildPdfTimesheetBlobInner() {
   const sorted = getSortedEntries();
-  const pageWidth = 612;
-  const pageHeight = 792;
-  const marginLeft = 42;
-  const marginRight = 42;
+  // Landscape Letter: 9 full-header columns plus long job-site names need the
+  // extra horizontal room to stay readable and never overlap.
+  const pageWidth = 792;
+  const pageHeight = 612;
+  const marginLeft = 48;
+  const marginRight = 48;
   const topMargin = 44;
-  const bottomMargin = 54;
+  const bottomMargin = 56;
   const usableWidth = pageWidth - marginLeft - marginRight;
+  const contentRight = marginLeft + usableWidth;
   const colors = {
-    ink: [0.12, 0.15, 0.19],
-    muted: [0.38, 0.42, 0.47],
-    border: [0.84, 0.86, 0.89],
-    panel: [0.96, 0.97, 0.98],
-    panelAlt: [0.985, 0.987, 0.99],
-    accent: [0.18, 0.38, 0.63],
+    ink: [0.12, 0.15, 0.2],
+    muted: [0.42, 0.46, 0.52],
+    faint: [0.58, 0.62, 0.68],
+    headInk: [0.22, 0.27, 0.34],
+    border: [0.85, 0.87, 0.9],
+    hair: [0.9, 0.92, 0.94],
+    rowAlt: [0.965, 0.972, 0.982],
+    headFill: [0.93, 0.945, 0.965],
+    cardFill: [0.962, 0.972, 0.985],
+    accent: [0.16, 0.36, 0.62],
+    accentSoft: [0.62, 0.71, 0.84],
+    onAccent: [1, 1, 1],
+    onAccentSoft: [0.8, 0.87, 0.96],
   };
-  const contentRight = pageWidth - marginRight - 12;
-  const cols = {
-    date: marginLeft,
-    jobSite: 100,
-    hourlyRateRight: 166,
-    hourlyRateWidth: 48,
-    start: 174,
-    breakStart: 224,
-    breakEnd: 274,
-    end: 324,
-    totalWidth: 42,
-    payWidth: 50,
-    totalRight: contentRight - 50 - 8,
-    payRight: contentRight,
-  };
+  const entryLayout = buildEntriesPdfLayout(sorted, pageWidth, marginLeft, marginRight);
+  const ec = entryLayout.columns;
+  const entryFontSize = entryLayout.fontSize;
   const pages = [];
   const summaryRows = getJobSiteSummaryRows(sorted);
+  const namedSiteRows = getNamedJobSiteSummaryRows(sorted);
   const dateRange = getDateRangeLabel(sorted);
   const workerName = getUserNameForPdf().trim();
   const hasPayData = entriesIncludePayData(sorted);
-  const pdfMainTitle = workerName
-    ? `${workerName} ${dateRange}`
-    : `${t("pdf.title")} ${dateRange}`;
+  const titleText = workerName || t("pdf.title");
   const totalMinutes = sorted.reduce((sum, entry) => sum + entry.totalMinutes, 0);
   const totalPay = getTotalPayFromEntries(sorted);
+  const totalHoursStr = formatMinutesAsHoursString(totalMinutes);
+  const totalPayStr = totalPay !== null ? formatPayAmount(totalPay) : null;
+  const now = new Date();
+  const generatedDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
+    now.getDate()
+  ).padStart(2, "0")}`;
   let y = topMargin;
   let ops = [];
 
@@ -1238,9 +1401,13 @@ function buildPdfTimesheetBlob() {
   };
 
   const addTextRight = (text, rightX, textY, size = 10, options = {}) => {
-    const display = truncatePdfText(text, options.maxWidth || 160, size);
-    const width = estimatePdfTextWidth(display, size);
-    addText(display, rightX - width, textY, size, options);
+    const rightInset = options.rightInset ?? 8;
+    const maxWidth = options.maxWidth || 160;
+    const display = truncatePdfText(text, maxWidth, size);
+    const width = estimatePdfTextWidth(display, size, {
+      bold: options.font === "bold",
+    });
+    addText(display, rightX - width - rightInset, textY, size, options);
   };
 
   const addRect = (x, rectY, w, h, fillColor) => {
@@ -1254,229 +1421,302 @@ function buildPdfTimesheetBlob() {
   const ensureSpace = (height, options = {}) => {
     if (y + height <= pageHeight - bottomMargin) return;
     createPage();
-    drawPageHeader(options.continued === true);
+    drawHeaderBand(true);
     if (options.repeatTableHeader) {
-      y += 12;
       drawTableHeader();
     }
   };
 
-  const drawPageHeader = (continued = false) => {
-    addRect(marginLeft, y, usableWidth, 4, colors.accent);
-    y += 18;
-    const headerTitle = continued ? `${pdfMainTitle} ${t("pdf.continued")}` : pdfMainTitle;
-    addText(truncatePdfText(headerTitle, usableWidth - 8, 20), marginLeft, y, 20, {
+  // Branded header band. Full size on the first page; compact on continuations.
+  const drawHeaderBand = (continued = false) => {
+    const bandH = continued ? 36 : 74;
+    addRect(marginLeft, y, usableWidth, bandH, colors.accent);
+
+    if (continued) {
+      addText(`${titleText} ${t("pdf.continued")}`, marginLeft + 18, y + 23, 13, {
+        font: "bold",
+        color: colors.onAccent,
+      });
+      addTextRight(dateRange, contentRight - 18, y + 23, 10, {
+        color: colors.onAccentSoft,
+        maxWidth: usableWidth * 0.4,
+        rightInset: 0,
+      });
+      y += bandH + 16;
+      return;
+    }
+
+    addText(t("pdf.eyebrow").toUpperCase(), marginLeft + 20, y + 25, 8.5, {
       font: "bold",
+      color: colors.onAccentSoft,
     });
-    y += 22;
-    addText(
-      `${t("summary.allSaved")}: ${sorted.length}   ${t("pdf.summaryTotalHours")}: ${formatMinutesAsHoursString(totalMinutes)}`,
-      marginLeft,
-      y,
-      10,
-      { color: colors.muted }
-    );
-    y += 18;
-    addLine(marginLeft, y, pageWidth - marginRight, colors.border, 1);
-    y += 18;
+    addText(truncatePdfText(titleText, usableWidth * 0.6, 22), marginLeft + 20, y + 52, 22, {
+      font: "bold",
+      color: colors.onAccent,
+    });
+
+    addTextRight(t("pdf.dateRange").toUpperCase(), contentRight - 20, y + 25, 8.5, {
+      font: "bold",
+      color: colors.onAccentSoft,
+      maxWidth: usableWidth * 0.5,
+      rightInset: 0,
+    });
+    addTextRight(dateRange, contentRight - 20, y + 48, 13, {
+      font: "bold",
+      color: colors.onAccent,
+      maxWidth: usableWidth * 0.5,
+      rightInset: 0,
+    });
+    y += bandH + 22;
   };
 
   const drawSectionTitle = (title) => {
-    ensureSpace(26);
-    addText(title, marginLeft, y, 13, { font: "bold" });
-    y += 14;
+    ensureSpace(34);
+    addRect(marginLeft, y - 10, 4, 14, colors.accent);
+    addText(title, marginLeft + 13, y, 14, { font: "bold" });
+    y += 16;
   };
 
-  const drawSummaryCard = (label, value, x, cardY, w) => {
-    addRect(x, cardY, w, 54, colors.panel);
-    addText(label, x + 12, cardY + 17, 9, { color: colors.muted });
-    addText(value, x + 12, cardY + 39, 15, { font: "bold" });
+  const drawSummaryCards = () => {
+    const cards = [{ label: t("pdf.summaryTotalHours"), value: totalHoursStr }];
+    if (totalPayStr) {
+      cards.push({ label: t("pdf.summaryTotalPay"), value: totalPayStr, highlight: true });
+    }
+    cards.push({ label: t("pdf.entriesCount"), value: String(sorted.length) });
+    cards.push({ label: t("pdf.jobSites"), value: String(namedSiteRows.length) });
+
+    const cardH = 58;
+    const cardGap = 14;
+    const cardWidth = (usableWidth - cardGap * (cards.length - 1)) / cards.length;
+    ensureSpace(cardH + 6);
+    const top = y;
+
+    cards.forEach((card, index) => {
+      const x = marginLeft + index * (cardWidth + cardGap);
+      addRect(x, top, cardWidth, cardH, colors.cardFill);
+      addRect(x, top, 3.5, cardH, card.highlight ? colors.accent : colors.accentSoft);
+      addText(truncatePdfText(card.label, cardWidth - 22, 8.5), x + 14, top + 22, 8.5, {
+        color: colors.muted,
+      });
+      addText(truncatePdfText(card.value, cardWidth - 22, 16), x + 14, top + 45, 16, {
+        font: "bold",
+        color: card.highlight ? colors.accent : colors.ink,
+      });
+    });
+
+    y = top + cardH + 26;
   };
 
   const drawTableHeader = () => {
-    addRect(marginLeft, y, usableWidth, 24, colors.panel);
-    addText(t("table.date"), cols.date, y + 15, 8, { font: "bold", color: colors.muted });
-    addText(t("table.jobSite"), cols.jobSite, y + 15, 8, {
-      font: "bold",
-      color: colors.muted,
+    const headerH = entryLayout.headerRowHeight;
+    addRect(marginLeft, y, usableWidth, headerH, colors.headFill);
+    const hy = y + headerH - 8;
+    const headerStyle = { font: "bold", color: colors.headInk };
+
+    addText(ec.date.header, ec.date.x, hy, entryFontSize, headerStyle);
+    addText(ec.jobSite.header, ec.jobSite.x, hy, entryFontSize, headerStyle);
+    addTextRight(ec.hourlyRate.header, ec.hourlyRate.right, hy, entryFontSize, {
+      ...headerStyle,
+      maxWidth: ec.hourlyRate.width,
+      rightInset: 2,
     });
-    addTextRight(
-      truncatePdfText(t("table.hourlyRate"), cols.hourlyRateWidth, 8),
-      cols.hourlyRateRight,
-      y + 15,
-      8,
-      { font: "bold", color: colors.muted, maxWidth: cols.hourlyRateWidth }
-    );
-    addText(t("table.start"), cols.start, y + 15, 8, { font: "bold", color: colors.muted });
-    addText(t("table.breakStart"), cols.breakStart, y + 15, 8, {
-      font: "bold",
-      color: colors.muted,
+    addText(ec.start.header, ec.start.x, hy, entryFontSize, headerStyle);
+    addText(ec.breakStart.header, ec.breakStart.x, hy, entryFontSize, headerStyle);
+    addText(ec.breakEnd.header, ec.breakEnd.x, hy, entryFontSize, headerStyle);
+    addText(ec.end.header, ec.end.x, hy, entryFontSize, headerStyle);
+    addTextRight(ec.total.header, ec.total.right, hy, entryFontSize, {
+      ...headerStyle,
+      maxWidth: ec.total.width,
+      rightInset: 2,
     });
-    addText(t("table.breakEnd"), cols.breakEnd, y + 15, 8, {
-      font: "bold",
-      color: colors.muted,
+    addTextRight(ec.pay.header, ec.pay.right, hy, entryFontSize, {
+      ...headerStyle,
+      maxWidth: ec.pay.width,
+      rightInset: 2,
     });
-    addText(t("table.end"), cols.end, y + 15, 8, { font: "bold", color: colors.muted });
-    addTextRight(t("table.total"), cols.totalRight, y + 15, 8, {
-      font: "bold",
-      color: colors.muted,
-      maxWidth: cols.totalWidth,
-    });
-    addTextRight(
-      truncatePdfText(t("pdf.payOwed"), cols.payWidth, 8),
-      cols.payRight,
-      y + 15,
-      8,
-      { font: "bold", color: colors.muted, maxWidth: cols.payWidth }
-    );
-    y += 24;
+    addLine(marginLeft, y + headerH, contentRight, colors.accent, 1.2);
+    y += headerH;
   };
 
   createPage();
-  drawPageHeader(false);
-
-  ensureSpace(76);
-  const summaryTop = y;
-  const cardGap = 12;
-  const cardWidth = (usableWidth - cardGap * 2) / 3;
-  drawSummaryCard(t("pdf.summaryTotalHours"), formatMinutesAsHoursString(totalMinutes), marginLeft, summaryTop, cardWidth);
-  drawSummaryCard(t("summary.allSaved"), String(sorted.length), marginLeft + cardWidth + cardGap, summaryTop, cardWidth);
-  drawSummaryCard(
-    t("breakdown.title"),
-    String(summaryRows.length),
-    marginLeft + (cardWidth + cardGap) * 2,
-    summaryTop,
-    cardWidth
-  );
-  y += 72;
+  drawHeaderBand(false);
+  drawSummaryCards();
 
   drawSectionTitle(t("pdf.entriesSection"));
   drawTableHeader();
 
+  const emptyCell = t("table.emptyCell");
   sorted.forEach((entry, index) => {
-    const rowHeight = 22;
-    ensureSpace(rowHeight + 8, { repeatTableHeader: true, continued: true });
+    const rowHeight = entryLayout.rowHeight;
+    ensureSpace(rowHeight + 8, { repeatTableHeader: true });
 
-    if (index % 2 === 0) {
-      addRect(marginLeft, y, usableWidth, rowHeight, colors.panelAlt);
+    if (index % 2 === 1) {
+      addRect(marginLeft, y, usableWidth, rowHeight, colors.rowAlt);
     }
 
-    addText(entry.date, cols.date, y + 14, 8);
+    const ry = y + rowHeight - 7;
+
+    addText(entry.date, ec.date.x, ry, entryFontSize);
     addText(
-      truncatePdfText(
-        displayJobSiteCell(entry),
-        cols.hourlyRateRight - cols.jobSite - 10,
-        8
-      ),
-      cols.jobSite,
-      y + 14,
-      8
+      truncatePdfText(displayJobSiteCell(entry), ec.jobSite.width - 4, entryFontSize),
+      ec.jobSite.x,
+      ry,
+      entryFontSize
     );
-    addTextRight(
-      formatHourlyRateDisplay(entry.hourlyRate),
-      cols.hourlyRateRight,
-      y + 14,
-      8,
-      { maxWidth: cols.hourlyRateWidth }
-    );
-    addText(formatTimeTo12Hour(entry.startTime), cols.start, y + 14, 8);
+    addTextRight(formatHourlyRateDisplay(entry.hourlyRate), ec.hourlyRate.right, ry, entryFontSize, {
+      maxWidth: ec.hourlyRate.width,
+      rightInset: 2,
+    });
+    addText(formatTimeTo12Hour(entry.startTime), ec.start.x, ry, entryFontSize);
     addText(
-      entry.breakStart ? formatTimeTo12Hour(entry.breakStart) : t("table.emptyCell"),
-      cols.breakStart,
-      y + 14,
-      8
+      entry.breakStart ? formatTimeTo12Hour(entry.breakStart) : emptyCell,
+      ec.breakStart.x,
+      ry,
+      entryFontSize
     );
     addText(
-      entry.breakEnd ? formatTimeTo12Hour(entry.breakEnd) : t("table.emptyCell"),
-      cols.breakEnd,
-      y + 14,
-      8
+      entry.breakEnd ? formatTimeTo12Hour(entry.breakEnd) : emptyCell,
+      ec.breakEnd.x,
+      ry,
+      entryFontSize
     );
-    addText(formatTimeTo12Hour(entry.endTime), cols.end, y + 14, 8);
+    addText(formatTimeTo12Hour(entry.endTime), ec.end.x, ry, entryFontSize);
     addTextRight(
       formatMinutesAsHoursString(entry.totalMinutes),
-      cols.totalRight,
-      y + 14,
-      8,
-      { maxWidth: cols.totalWidth }
+      ec.total.right,
+      ry,
+      entryFontSize,
+      { font: "bold", maxWidth: ec.total.width, rightInset: 2 }
     );
-    addTextRight(formatEntryPayDisplay(entry), cols.payRight, y + 14, 8, {
-      maxWidth: cols.payWidth,
+    const entryPayText = formatEntryPayDisplay(entry);
+    addTextRight(entryPayText, ec.pay.right, ry, entryFontSize, {
+      font: entryPayText !== emptyCell ? "bold" : "regular",
+      maxWidth: ec.pay.width,
+      rightInset: 2,
     });
-    addLine(marginLeft, y + rowHeight, pageWidth - marginRight, colors.border, 0.6);
+    addLine(marginLeft, y + rowHeight, contentRight, colors.hair, 0.6);
     y += rowHeight;
   });
 
-  y += 18;
+  y += 26;
   drawSectionTitle(t("pdf.summarySection"));
-  ensureSpace(28);
-  addText(`${t("pdf.summaryTotalHours")}:`, marginLeft, y + 2, 10, { color: colors.muted });
-  addText(formatMinutesAsHoursString(totalMinutes), marginLeft + 110, y + 2, 12, { font: "bold" });
-  if (totalPay !== null) {
-    y += 22;
-    addText(`${t("pdf.summaryTotalPay")}:`, marginLeft, y + 2, 10, { color: colors.muted });
-    addText(formatPayAmount(totalPay), marginLeft + 110, y + 2, 12, { font: "bold" });
-  }
-  y += 22;
-  addLine(marginLeft, y, pageWidth - marginRight, colors.border, 1);
-  y += 18;
-  addText(t("pdf.summaryByJobSite"), marginLeft, y, 11, { font: "bold" });
-  y += 14;
 
-  if (hasPayData) {
-    addTextRight(t("table.total"), pageWidth - marginRight - 110, y, 9, {
-      color: colors.muted,
-      maxWidth: 90,
-    });
-    addTextRight(t("pdf.payOwed"), pageWidth - marginRight - 10, y, 9, {
-      color: colors.muted,
-      maxWidth: 90,
-    });
-    y += 14;
+  ensureSpace(30);
+  const labelGap = Math.max(
+    120,
+    pdfTextWidth(`${t("pdf.summaryTotalHours")}:`, 10, false),
+    pdfTextWidth(`${t("pdf.summaryTotalPay")}:`, 10, false)
+  );
+  addText(`${t("pdf.summaryTotalHours")}:`, marginLeft, y + 2, 10, { color: colors.muted });
+  addText(totalHoursStr, marginLeft + labelGap, y + 2, 13, { font: "bold" });
+  if (totalPayStr) {
+    y += 24;
+    addText(`${t("pdf.summaryTotalPay")}:`, marginLeft, y + 2, 10, { color: colors.muted });
+    addText(totalPayStr, marginLeft + labelGap, y + 2, 13, { font: "bold", color: colors.accent });
   }
+  y += 24;
+  addLine(marginLeft, y, contentRight, colors.border, 1);
+  y += 22;
+
+  addText(t("pdf.summaryByJobSite"), marginLeft, y, 12, { font: "bold" });
+  y += 16;
+
+  const summaryHoursRight = hasPayData
+    ? entryLayout.tableRight - ec.pay.width - ec.total.width - 24
+    : entryLayout.tableRight;
+
+  const drawJobSiteHeader = () => {
+    addRect(marginLeft, y, usableWidth, 22, colors.headFill);
+    const hy = y + 15;
+    addText(t("table.jobSite"), marginLeft + 12, hy, 9, {
+      font: "bold",
+      color: colors.headInk,
+    });
+    addTextRight(t("breakdown.hours"), summaryHoursRight, hy, 9, {
+      font: "bold",
+      color: colors.headInk,
+      maxWidth: ec.total.width + 20,
+      rightInset: 2,
+    });
+    if (hasPayData) {
+      addTextRight(t("pdf.payOwed"), entryLayout.tableRight, hy, 9, {
+        font: "bold",
+        color: colors.headInk,
+        maxWidth: ec.pay.width,
+        rightInset: 2,
+      });
+    }
+    addLine(marginLeft, y + 22, contentRight, colors.accent, 1.2);
+    y += 22;
+  };
+
+  ensureSpace(40);
+  drawJobSiteHeader();
 
   summaryRows.forEach((row, index) => {
-    const wrappedName = wrapPdfText(
-      row.label,
-      usableWidth - (hasPayData ? 220 : 130),
-      10
-    );
-    const rowHeight = Math.max(24, wrappedName.length * 12 + 8);
-    ensureSpace(rowHeight + 4, { continued: true });
+    const nameMaxWidth = hasPayData
+      ? summaryHoursRight - marginLeft - ec.total.width - 28
+      : entryLayout.tableRight - marginLeft - 24;
+    const wrappedName = wrapPdfText(row.label, nameMaxWidth, 10);
+    const rowHeight = Math.max(24, wrappedName.length * 13 + 8);
+    ensureSpace(rowHeight + 4);
 
-    if (index % 2 === 0) {
-      addRect(marginLeft, y, usableWidth, rowHeight, colors.panelAlt);
+    if (index % 2 === 1) {
+      addRect(marginLeft, y, usableWidth, rowHeight, colors.rowAlt);
     }
 
     wrappedName.forEach((line, lineIndex) => {
-      addText(line, marginLeft + 10, y + 16 + lineIndex * 12, 10);
+      addText(line, marginLeft + 12, y + 16 + lineIndex * 13, 10);
     });
-    const hoursRight = hasPayData ? pageWidth - marginRight - 110 : pageWidth - marginRight - 10;
-    addTextRight(formatMinutesAsHoursString(row.minutes), hoursRight, y + 16, 10, {
+    addTextRight(formatMinutesAsHoursString(row.minutes), summaryHoursRight, y + 16, 10, {
       font: "bold",
-      maxWidth: 90,
+      maxWidth: ec.total.width + 20,
+      rightInset: 2,
     });
     if (hasPayData) {
       addTextRight(
-        row.hasPay ? formatPayAmount(row.pay) : t("table.emptyCell"),
-        pageWidth - marginRight - 10,
+        row.hasPay ? formatPayAmount(row.pay) : emptyCell,
+        entryLayout.tableRight,
         y + 16,
         10,
-        { font: "bold", maxWidth: 90 }
+        { font: row.hasPay ? "bold" : "regular", maxWidth: ec.pay.width, rightInset: 2 }
       );
     }
-    addLine(marginLeft, y + rowHeight, pageWidth - marginRight, colors.border, 0.6);
+    addLine(marginLeft, y + rowHeight, contentRight, colors.hair, 0.6);
     y += rowHeight;
   });
 
+  const totalPages = pages.length;
   pages.forEach((pageOps, index) => {
+    const footY = pageHeight - 24;
+    pageOps.push({
+      type: "line",
+      x1: marginLeft,
+      y1: pageHeight - 38,
+      x2: contentRight,
+      y2: pageHeight - 38,
+      color: colors.hair,
+      width: 0.8,
+    });
     pageOps.push({
       type: "text",
-      text: `${index + 1}`,
-      x: pageWidth - marginRight,
-      y: pageHeight - 18,
-      size: 9,
-      color: colors.muted,
+      text: t("pdf.generated", { date: generatedDate }),
+      x: marginLeft,
+      y: footY,
+      size: 8.5,
+      color: colors.faint,
+      font: "regular",
+    });
+    const pageLabel = t("pdf.pageOf", { current: index + 1, total: totalPages });
+    const labelWidth = estimatePdfTextWidth(pageLabel, 8.5);
+    pageOps.push({
+      type: "text",
+      text: pageLabel,
+      x: contentRight - labelWidth,
+      y: footY,
+      size: 8.5,
+      color: colors.faint,
+      font: "regular",
     });
   });
 
