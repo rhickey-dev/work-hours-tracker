@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"/></head>
+<body>
+<canvas id="c" width="180" height="180"></canvas>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const size = 180;
+const cx = size / 2;
+const cy = size / 2;
+
+// Blue background with rounded corners
+const r = 40;
+ctx.beginPath();
+ctx.moveTo(r, 0);
+ctx.lineTo(size - r, 0);
+ctx.quadraticCurveTo(size, 0, size, r);
+ctx.lineTo(size, size - r);
+ctx.quadraticCurveTo(size, size, size - r, size);
+ctx.lineTo(r, size);
+ctx.quadraticCurveTo(0, size, 0, size - r);
+ctx.lineTo(0, r);
+ctx.quadraticCurveTo(0, 0, r, 0);
+ctx.closePath();
+ctx.fillStyle = '#2563eb';
+ctx.fill();
+
+// Clock circle
+ctx.beginPath();
+ctx.arc(cx, cy, 62, 0, Math.PI * 2);
+ctx.strokeStyle = 'white';
+ctx.lineWidth = 10;
+ctx.stroke();
+
+// Hour hand (pointing to 12)
+ctx.beginPath();
+ctx.moveTo(cx, cy);
+ctx.lineTo(cx, cy - 36);
+ctx.strokeStyle = 'white';
+ctx.lineWidth = 10;
+ctx.lineCap = 'round';
+ctx.stroke();
+
+// Minute hand (pointing to ~2 o'clock, i.e. 60 degrees from 12)
+const angle = (60 * Math.PI) / 180;
+ctx.beginPath();
+ctx.moveTo(cx, cy);
+ctx.lineTo(cx + Math.sin(angle) * 28, cy - Math.cos(angle) * 28);
+ctx.lineWidth = 8;
+ctx.stroke();
+
+// Center dot
+ctx.beginPath();
+ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+ctx.fillStyle = 'white';
+ctx.fill();
+
+window._iconDataURL = canvas.toDataURL('image/png');
+</script>
+</body>
+</html>

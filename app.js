@@ -33,87 +33,94 @@ const translations = {
   en: {
     "meta.title": "Work Hours Tracker",
     "lang.switcherLabel": "Language",
-    "lang.switcherHint": "Choose interface language",
+    "lang.switcherHint": "Choose your language",
     "lang.en": "English",
     "lang.es": "Español",
     "header.eyebrow": "Time tracker",
     "header.title": "Work Hours Tracker",
-    "header.lede": "Track daily work time and your running total.",
-    "entry.heading": "Daily time entry",
-    "form.userName": "Name",
-    "form.userNamePlaceholder": "Your name",
+    "header.lede": "Write down the hours you work each day and watch your totals add up.",
+    "summary.title": "Your totals",
+    "entry.heading": "Add a work day",
+    "entry.subtitle": "Fill in the boxes below, then press Save.",
+    "form.now": "Now",
+    "form.nowAria": "Use the time right now",
+    "form.userName": "Your name",
+    "form.userNameHelp": "This appears at the top of your PDF.",
+    "form.userNamePlaceholder": "Type your name",
+    "toast.saved": "Saved!",
+    "toast.updated": "Changes saved",
     "form.hourlyRate": "Hourly rate",
     "form.hourlyRatePlaceholder": "0.00",
     "form.hourlyRateHelp":
-      "Pay rate for this job site. Used to calculate pay owed on exported PDFs.",
+      "How much you get paid per hour. We use this to calculate your pay. (You can use a different hourly rate for each job site.)",
     "form.date": "Date",
-    "form.dateHint": "Defaults to today.",
+    "form.dateHint": "Today is already filled in. Tap it to pick a different day.",
     "form.jobSite": "Job site",
-    "form.jobSitePlaceholder": "Site name or address (optional)",
+    "form.jobSitePlaceholder": "Location name or address (optional)",
     "form.jobSiteHelp":
-      "(Optional) Leave blank to include hours only in the combined total. Named sites are grouped below.",
-    "workTime.title": "Work time",
-    "form.start": "Start",
-    "form.end": "End",
+      "If you fill this in, your hours for each location are added up separately below.",
+    "workTime.title": "Start and end time",
+    "form.start": "Start time",
+    "form.end": "End time",
     "break.title": "Break",
-    "break.optional": "(optional)",
-    "break.start": "Break start",
-    "break.end": "Break end",
-    "form.totalPrompt": "Enter all times to see today’s total hours.",
-    "form.totalInvalid": "Check your times above.",
-    "form.totalForDay": "Total for this day: {time}",
-    "form.saveEntry": "Save entry",
-    "form.clearForm": "Clear form",
-    "entries.heading": "Saved entries",
-    "entries.subtitle": "Stored locally in your browser only.",
-    "entries.export": "Export",
-    "entries.deleteAll": "Delete all entries",
+    "break.optional": "(only if you took one)",
+    "break.start": "Break started",
+    "break.end": "Break ended",
+    "form.totalPrompt": "Fill in your start and end time to see your hours.",
+    "form.totalInvalid": "Those times don’t add up. Please check them.",
+    "form.totalForDay": "Hours worked this day: {time}",
+    "form.saveEntry": "Save this day",
+    "form.clearForm": "Start over",
+    "entries.heading": "Your saved days",
+    "entries.subtitle": "Saved on this device only. Nothing is sent anywhere.",
+    "entries.export": "Download PDF",
+    "entries.deleteAll": "Delete all",
     "table.date": "Date",
     "table.jobSite": "Job site",
     "table.hourlyRate": "Hourly rate",
-    "table.start": "Start",
-    "table.breakStart": "Break start",
-    "table.breakEnd": "Break end",
-    "table.end": "End",
-    "table.total": "Total",
-    "table.actions": "Actions",
-    "summary.weekHeading": "All saved entries",
-    "summary.allSaved": "All saved entries",
+    "table.start": "Start time",
+    "table.breakStart": "Break started",
+    "table.breakEnd": "Break ended",
+    "table.end": "End time",
+    "table.total": "Hours",
+    "table.actions": "Edit or delete",
+    "summary.weekHeading": "All saved days",
+    "summary.allSaved": "All saved days",
     "summary.totalUnit": "total hours",
-    "summary.totalPay": "total pay owed",
-    "summary.noSitePay": "Pay (no job site listed)",
-    "summary.noSiteAria": "Hours with no job site",
-    "summary.noSiteLabel": "Hours (no job site listed)",
+    "summary.totalPay": "total pay",
+    "summary.noSitePay": "Pay for days with no job site",
+    "summary.noSiteAria": "Hours for days with no job site",
+    "summary.noSiteLabel": "Hours for days with no job site",
     "breakdown.hours": "Hours",
-    "breakdown.pay": "Pay owed",
-    "breakdown.title": "All entries by job site",
+    "breakdown.pay": "Pay",
+    "breakdown.title": "Totals for each job site",
     "breakdown.subtitle":
-      "Hours and pay grouped by job site. Entries with no job site listed are included only in the totals above.",
-    "dialog.deleteTitle": "Delete entry",
-    "dialog.deleteMessage": "Are you sure you want to delete this entry?",
-    "dialog.deleteAllTitle": "Delete all entries?",
+      "Your hours and pay added up for each job site. Days with no job site are only counted in the totals at the top.",
+    "dialog.deleteTitle": "Delete this day?",
+    "dialog.deleteMessage": "This removes this day for good. Are you sure?",
+    "dialog.deleteAllTitle": "Delete everything?",
     "dialog.deleteAllMessage":
-      "This removes every saved entry from this browser. This cannot be undone.",
-    "dialog.no": "No",
-    "dialog.yes": "Yes",
-    "empty.noEntries": "No entries yet. Add your first one above.",
+      "This deletes every day you’ve saved. You can’t undo this.",
+    "dialog.no": "Cancel",
+    "dialog.yes": "Delete",
+    "empty.noEntries": "No days saved yet. Add your first one above.",
     "table.edit": "Edit",
     "table.delete": "Delete",
-    "breakdown.emptyNone": "No entries yet.",
+    "breakdown.emptyNone": "No days saved yet.",
     "breakdown.emptyNoNamed":
-      "No named job sites yet. Hours without a site are included in the total above.",
-    "errors.needDateStartEnd": "Please enter at least a date, start time, and end time.",
+      "No job sites added yet. Days with no job site are counted in the total at the top.",
+    "errors.needDateStartEnd": "Please fill in the date, start time, and end time.",
     "errors.invalidTimeCombination":
-      "The times you entered do not look valid. Please check them.",
+      "Those times don’t look right. Please check them and try again.",
     "time.am": "a.m.",
     "time.pm": "p.m.",
     "format.hoursMinutes": "{hours}h {minutes}m",
     "table.emptyCell": "—",
-    "table.editAria": "Edit this entry",
-    "table.deleteAria": "Delete this entry",
-    "dialog.closeBackdrop": "Close dialog",
-    "breakdown.listAria": "Hours totals grouped by job site",
-    "entries.tableCaption": "Saved work time entries",
+    "table.editAria": "Edit this day",
+    "table.deleteAria": "Delete this day",
+    "dialog.closeBackdrop": "Close",
+    "breakdown.listAria": "Hours and pay for each job site",
+    "entries.tableCaption": "Your saved work days",
     "pdf.title": "Work Hours Timesheet",
     "pdf.name": "Name",
     "pdf.dateRange": "Date range",
@@ -138,88 +145,95 @@ const translations = {
   es: {
     "meta.title": "Rastreador de horas de trabajo",
     "lang.switcherLabel": "Idioma",
-    "lang.switcherHint": "Elige el idioma de la interfaz",
+    "lang.switcherHint": "Elige tu idioma",
     "lang.en": "English",
     "lang.es": "Español",
     "header.eyebrow": "Rastreador de tiempo",
     "header.title": "Rastreador de horas de trabajo",
-    "header.lede": "Rastrea el tiempo diario de trabajo y tu total acumulado.",
-    "entry.heading": "Entrada diaria de tiempo",
-    "form.userName": "Nombre",
-    "form.userNamePlaceholder": "Tu nombre",
-    "form.hourlyRate": "Tarifa por hora",
+    "header.lede": "Anota las horas que trabajas cada día y mira cómo suman tus totales.",
+    "summary.title": "Tus totales",
+    "entry.heading": "Agregar un día de trabajo",
+    "entry.subtitle": "Completa las casillas de abajo y presiona Guardar.",
+    "form.now": "Ahora",
+    "form.nowAria": "Usar la hora actual",
+    "form.userName": "Tu nombre",
+    "form.userNameHelp": "Aparece en la parte superior de tu PDF.",
+    "form.userNamePlaceholder": "Escribe tu nombre",
+    "toast.saved": "¡Guardado!",
+    "toast.updated": "Cambios guardados",
+    "form.hourlyRate": "Pago por hora",
     "form.hourlyRatePlaceholder": "0.00",
     "form.hourlyRateHelp":
-      "Tarifa de pago para este sitio de trabajo. Se usa para calcular el pago adeudado en los PDF exportados.",
+      "Cuánto te pagan por una hora. Lo usamos para calcular tu pago. Puedes usar una cantidad distinta para cada sitio de trabajo.",
     "form.date": "Fecha",
-    "form.dateHint": "Por defecto es la fecha de hoy.",
-    "form.jobSite": "Obra / sitio",
-    "form.jobSitePlaceholder": "Nombre del sitio o dirección (opcional)",
+    "form.dateHint": "Hoy ya está puesto. Tócalo para elegir otro día.",
+    "form.jobSite": "Sitio de trabajo",
+    "form.jobSitePlaceholder": "Nombre del lugar o dirección (puedes dejarlo vacío)",
     "form.jobSiteHelp":
-      "(Opcional) Déjalo en blanco para incluir las horas solo en el total combinado. Los sitios con nombre se agrupan abajo.",
-    "workTime.title": "Tiempo de trabajo",
-    "form.start": "Inicio",
-    "form.end": "Fin",
+      "Si lo completas, tus horas de cada lugar se suman por separado abajo.",
+    "workTime.title": "Hora de inicio y de fin",
+    "form.start": "Hora de inicio",
+    "form.end": "Hora de fin",
     "break.title": "Descanso",
-    "break.optional": "(opcional)",
-    "break.start": "Inicio del descanso",
-    "break.end": "Fin del descanso",
-    "form.totalPrompt": "Ingresa todas las horas para ver el total de hoy.",
-    "form.totalInvalid": "Revisa tus horas arriba.",
-    "form.totalForDay": "Total de este día: {time}",
-    "form.saveEntry": "Guardar entrada",
-    "form.clearForm": "Borrar formulario",
-    "entries.heading": "Entradas guardadas",
-    "entries.subtitle": "Guardadas localmente solo en tu navegador.",
-    "entries.export": "Exportar",
-    "entries.deleteAll": "Eliminar todas las entradas",
+    "break.optional": "(solo si tomaste uno)",
+    "break.start": "Empezó el descanso",
+    "break.end": "Terminó el descanso",
+    "form.totalPrompt": "Pon tu hora de inicio y de fin para ver tus horas.",
+    "form.totalInvalid": "Esas horas no cuadran. Por favor revísalas.",
+    "form.totalForDay": "Horas trabajadas este día: {time}",
+    "form.saveEntry": "Guardar este día",
+    "form.clearForm": "Empezar de nuevo",
+    "entries.heading": "Tus días guardados",
+    "entries.subtitle": "Se guardan solo en este dispositivo. No se envía nada a ningún lado.",
+    "entries.export": "Descargar PDF",
+    "entries.deleteAll": "Eliminar todo",
     "table.date": "Fecha",
     "table.jobSite": "Sitio de trabajo",
-    "table.hourlyRate": "Tarifa por hora",
-    "table.start": "Inicio",
-    "table.breakStart": "Inicio del descanso",
-    "table.breakEnd": "Fin del descanso",
-    "table.end": "Fin",
-    "table.total": "Total",
-    "table.actions": "Acciones",
-    "summary.weekHeading": "Todas las entradas guardadas",
-    "summary.allSaved": "Todas las entradas guardadas",
-    "summary.totalUnit": "horas totales",
-    "summary.totalPay": "pago total adeudado",
-    "summary.noSitePay": "Pago (sin sitio de trabajo indicado)",
-    "summary.noSiteAria": "Horas sin sitio de trabajo",
-    "summary.noSiteLabel": "Horas (sin sitio de trabajo indicado)",
+    "table.hourlyRate": "Pago por hora",
+    "table.start": "Hora de inicio",
+    "table.breakStart": "Empezó el descanso",
+    "table.breakEnd": "Terminó el descanso",
+    "table.end": "Hora de fin",
+    "table.total": "Horas",
+    "table.actions": "Editar o eliminar",
+    "summary.weekHeading": "Todos los días guardados",
+    "summary.allSaved": "Todos los días guardados",
+    "summary.totalUnit": "horas en total",
+    "summary.totalPay": "pago total",
+    "summary.noSitePay": "Pago de días sin sitio de trabajo",
+    "summary.noSiteAria": "Horas de días sin sitio de trabajo",
+    "summary.noSiteLabel": "Horas de días sin sitio de trabajo",
     "breakdown.hours": "Horas",
-    "breakdown.pay": "Pago adeudado",
-    "breakdown.title": "Todas las entradas por sitio de trabajo",
+    "breakdown.pay": "Pago",
+    "breakdown.title": "Totales por sitio de trabajo",
     "breakdown.subtitle":
-      "Horas y pago agrupados por sitio de trabajo. Las entradas sin sitio de trabajo indicado se incluyen solo en los totales de arriba.",
-    "dialog.deleteTitle": "Eliminar entrada",
-    "dialog.deleteMessage": "¿Estás seguro de que quieres eliminar esta entrada?",
-    "dialog.deleteAllTitle": "¿Eliminar todas las entradas?",
+      "Tus horas y pago sumados por cada sitio de trabajo. Los días sin sitio de trabajo solo se cuentan en los totales de arriba.",
+    "dialog.deleteTitle": "¿Eliminar este día?",
+    "dialog.deleteMessage": "Esto elimina este día para siempre. ¿Seguro?",
+    "dialog.deleteAllTitle": "¿Eliminar todo?",
     "dialog.deleteAllMessage":
-      "Esto elimina todas las entradas guardadas de este navegador. Esto no se puede deshacer.",
-    "dialog.no": "No",
-    "dialog.yes": "Sí",
-    "empty.noEntries": "Todavía no hay entradas. Agrega la primera arriba.",
+      "Esto elimina todos los días que guardaste. No se puede deshacer.",
+    "dialog.no": "Cancelar",
+    "dialog.yes": "Eliminar",
+    "empty.noEntries": "Todavía no hay días guardados. Agrega el primero arriba.",
     "table.edit": "Editar",
     "table.delete": "Eliminar",
-    "breakdown.emptyNone": "Todavía no hay entradas.",
+    "breakdown.emptyNone": "Todavía no hay días guardados.",
     "breakdown.emptyNoNamed":
-      "Todavía no hay sitios de trabajo con nombre. Las horas sin sitio están incluidas en el total de arriba.",
+      "Todavía no hay sitios de trabajo. Los días sin sitio de trabajo se cuentan en el total de arriba.",
     "errors.needDateStartEnd":
-      "Ingresa al menos una fecha, una hora de inicio y una hora de fin.",
+      "Por favor completa la fecha, la hora de inicio y la hora de fin.",
     "errors.invalidTimeCombination":
-      "Las horas que ingresaste no parecen válidas. Por favor revísalas.",
+      "Esas horas no parecen correctas. Por favor revísalas e inténtalo de nuevo.",
     "time.am": "a. m.",
     "time.pm": "p. m.",
     "format.hoursMinutes": "{hours} h {minutes} min",
     "table.emptyCell": "—",
-    "table.editAria": "Editar esta entrada",
-    "table.deleteAria": "Eliminar esta entrada",
-    "dialog.closeBackdrop": "Cerrar diálogo",
-    "breakdown.listAria": "Totales de horas agrupados por sitio de trabajo",
-    "entries.tableCaption": "Entradas guardadas de tiempo de trabajo",
+    "table.editAria": "Editar este día",
+    "table.deleteAria": "Eliminar este día",
+    "dialog.closeBackdrop": "Cerrar",
+    "breakdown.listAria": "Horas y pago por cada sitio de trabajo",
+    "entries.tableCaption": "Tus días de trabajo guardados",
     "pdf.title": "Hoja de horas de trabajo",
     "pdf.name": "Nombre",
     "pdf.dateRange": "Rango de fechas",
@@ -1779,6 +1793,7 @@ function renderEntriesTable() {
 
   if (sorted.length === 0) {
     const row = document.createElement("tr");
+    row.className = "data-table__empty";
     const cell = document.createElement("td");
     cell.colSpan = 9;
     cell.textContent = t("empty.noEntries");
@@ -1794,35 +1809,46 @@ function renderEntriesTable() {
 
     const dateCell = document.createElement("td");
     dateCell.textContent = entry.date;
+    dateCell.dataset.label = t("table.date");
 
     const jobSiteCell = document.createElement("td");
     jobSiteCell.textContent = displayJobSiteCell(entry);
     jobSiteCell.className = "data-table__jobsite";
+    jobSiteCell.dataset.label = t("table.jobSite");
 
     const hourlyRateCell = document.createElement("td");
     hourlyRateCell.textContent = formatHourlyRateDisplay(entry.hourlyRate);
     hourlyRateCell.className = "data-table__rate";
+    hourlyRateCell.dataset.label = t("table.hourlyRate");
 
     const startCell = document.createElement("td");
     startCell.textContent = formatTimeTo12Hour(entry.startTime);
+    startCell.dataset.label = t("table.start");
 
     const breakStartCell = document.createElement("td");
     breakStartCell.textContent = entry.breakStart
       ? formatTimeTo12Hour(entry.breakStart)
       : t("table.emptyCell");
+    breakStartCell.dataset.label = t("table.breakStart");
 
     const breakEndCell = document.createElement("td");
     breakEndCell.textContent = entry.breakEnd
       ? formatTimeTo12Hour(entry.breakEnd)
       : t("table.emptyCell");
+    breakEndCell.dataset.label = t("table.breakEnd");
 
     const endCell = document.createElement("td");
     endCell.textContent = formatTimeTo12Hour(entry.endTime);
+    endCell.dataset.label = t("table.end");
 
     const totalCell = document.createElement("td");
     totalCell.textContent = formatMinutesAsHoursString(entry.totalMinutes);
+    totalCell.dataset.label = t("table.total");
+    totalCell.dataset.col = "total";
 
     const actionsCell = document.createElement("td");
+    actionsCell.dataset.label = t("table.actions");
+    actionsCell.dataset.col = "actions";
 
     // Edit button
     const editButton = document.createElement("button");
@@ -1988,6 +2014,41 @@ function updateWeeklyJobSiteBreakdown() {
   }
 }
 
+// Brief, friendly confirmation after saving so users know it worked.
+let saveToastTimer = null;
+function showSaveToast(messageKey) {
+  const toast = document.getElementById("save-toast");
+  const text = document.getElementById("save-toast-text");
+  if (!toast || !text) return;
+
+  text.textContent = t(messageKey);
+  toast.hidden = false;
+  // Force a reflow so the entry transition runs even on rapid repeats.
+  void toast.offsetWidth;
+  toast.classList.add("is-visible");
+
+  if (saveToastTimer) clearTimeout(saveToastTimer);
+  saveToastTimer = setTimeout(() => {
+    toast.classList.remove("is-visible");
+    setTimeout(() => {
+      toast.hidden = true;
+    }, 250);
+  }, 2200);
+}
+
+// Pad a number to two digits for "HH:MM" time-input values.
+function pad2(n) {
+  return String(n).padStart(2, "0");
+}
+
+// Fill a time field with the current clock time and refresh the live total.
+function setTimeFieldToNow(input) {
+  if (!input) return;
+  const now = new Date();
+  input.value = `${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
 // Handle form submission: validate input, update or create an entry,
 // save to localStorage, and re-render everything.
 function handleFormSubmit(event) {
@@ -2014,6 +2075,8 @@ function handleFormSubmit(event) {
     setFormError("errors.invalidTimeCombination");
     return;
   }
+
+  const wasEditing = Boolean(editingEntryId);
 
   if (editingEntryId) {
     // Update an existing entry.
@@ -2062,6 +2125,8 @@ function handleFormSubmit(event) {
     hourlyRateInput.value = savedHourlyRate;
   }
   persistFormDraftToStorage();
+
+  showSaveToast(wasEditing ? "toast.updated" : "toast.saved");
 }
 
 // Initialize the app once the HTML document has loaded.
@@ -2186,6 +2251,14 @@ document.addEventListener("DOMContentLoaded", () => {
       handleFormSubmit(e);
     });
   }
+
+  // "Now" quick-fill buttons set a time field to the current clock time.
+  document.querySelectorAll(".now-btn").forEach((button) => {
+    button.addEventListener("click", () => {
+      const targetId = button.getAttribute("data-now-target");
+      if (targetId) setTimeFieldToNow(document.getElementById(targetId));
+    });
+  });
 
   // Handle the clear button.
   clearFormButton.addEventListener("click", () => {

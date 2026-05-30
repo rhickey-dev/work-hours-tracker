@@ -3,21 +3,34 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#2563eb" />
     <title>Work Hours Tracker</title>
     <link rel="icon" href="data:," />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=2" />
   </head>
   <body>
     <div class="app">
       <header class="app-header">
-        <div class="app-header__top">
-          <p class="app-header__eyebrow" data-i18n="header.eyebrow">Time tracker</p>
+        <div class="app-header__bar">
+          <div class="app-brand">
+            <span class="app-brand__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" />
+                <path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </span>
+            <div class="app-brand__text">
+              <p class="app-header__eyebrow" data-i18n="header.eyebrow">Time tracker</p>
+              <h1 class="app-header__title" data-i18n="header.title">Work Hours Tracker</h1>
+            </div>
+          </div>
           <div class="lang-switcher">
             <label class="lang-switcher__label" for="lang-select" data-i18n="lang.switcherLabel"
               >Language</label
@@ -31,16 +44,63 @@
             >
           </div>
         </div>
-        <h1 class="app-header__title" data-i18n="header.title">Work Hours Tracker</h1>
         <p class="app-header__lede" data-i18n="header.lede">
-          Track daily work time and your running total.
+          Write down the hours you work each day and watch your totals add up.
         </p>
       </header>
 
       <main class="app-main">
+        <!-- Totals hero: the running totals people care about most, up top. -->
+        <section class="card hero" aria-labelledby="week-heading">
+          <h2 id="week-heading" class="hero__heading" data-i18n="summary.title">Your totals</h2>
+          <div class="hero__figures">
+            <div class="hero__stat">
+              <span id="weekly-total" class="hero__value">0h 0m</span>
+              <span class="hero__label" data-i18n="summary.totalUnit">total hours</span>
+            </div>
+            <div class="hero__stat hero__stat--pay">
+              <span id="weekly-total-pay" class="hero__value hero__value--pay">—</span>
+              <span class="hero__label" data-i18n="summary.totalPay">total pay owed</span>
+            </div>
+          </div>
+          <div class="hero__notes">
+            <div
+              class="hero__note"
+              role="status"
+              aria-live="polite"
+              data-i18n-aria="summary.noSiteAria"
+              aria-label="Hours with no job site"
+            >
+              <span class="hero__note-label" data-i18n="summary.noSiteLabel"
+                >Hours for days with no job site</span
+              >
+              <span id="weekly-no-site-total" class="hero__note-value">0h 0m</span>
+            </div>
+            <div
+              id="weekly-no-site-pay-row"
+              class="hero__note hero__note--pay"
+              role="status"
+              aria-live="polite"
+              hidden
+            >
+              <span class="hero__note-label" data-i18n="summary.noSitePay"
+                >Pay for days with no job site</span
+              >
+              <span id="weekly-no-site-pay" class="hero__note-value">—</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Step 1: who this timesheet belongs to. -->
         <section class="card card--name" aria-labelledby="user-name-heading">
           <div class="card__head">
-            <h2 id="user-name-heading" class="card__title" data-i18n="form.userName">Name</h2>
+            <span class="step-badge" aria-hidden="true">1</span>
+            <div class="card__head__text">
+              <h2 id="user-name-heading" class="card__title" data-i18n="form.userName">Your name</h2>
+              <p class="card__subtitle" data-i18n="form.userNameHelp">
+                This appears at the top of your PDF.
+              </p>
+            </div>
           </div>
           <div class="user-name-field">
             <input
@@ -50,7 +110,7 @@
               name="user-name"
               maxlength="200"
               data-i18n-placeholder="form.userNamePlaceholder"
-              placeholder="Your name"
+              placeholder="Type your name"
               autocomplete="name"
               spellcheck="false"
               aria-labelledby="user-name-heading"
@@ -58,9 +118,16 @@
           </div>
         </section>
 
+        <!-- Step 2: log a work day. -->
         <section class="card card--form" aria-labelledby="entry-heading">
           <div class="card__head">
-            <h2 id="entry-heading" class="card__title" data-i18n="entry.heading">Daily time entry</h2>
+            <span class="step-badge" aria-hidden="true">2</span>
+            <div class="card__head__text">
+              <h2 id="entry-heading" class="card__title" data-i18n="entry.heading">Add a work day</h2>
+              <p class="card__subtitle" data-i18n="entry.subtitle">
+                Fill in the boxes below, then press Save.
+              </p>
+            </div>
           </div>
 
           <form
@@ -80,10 +147,10 @@
                 required
                 aria-describedby="date-help"
               />
-              <p class="form-hint" id="date-help" data-i18n="form.dateHint">Defaults to today.</p>
+              <p class="form-hint" id="date-help" data-i18n="form.dateHint">Today is already filled in. Tap it to pick a different day.</p>
             </div>
 
-            <div class="form-field form-field--full">
+            <div class="form-field">
               <label class="form-label" for="job-site" data-i18n="form.jobSite">Job site</label>
               <input
                 class="form-input"
@@ -92,17 +159,17 @@
                 name="job-site"
                 maxlength="200"
                 data-i18n-placeholder="form.jobSitePlaceholder"
-                placeholder="Site name or address (optional)"
+                placeholder="Location name or address (optional)"
                 autocomplete="off"
                 aria-describedby="job-site-help"
               />
               <p class="form-hint" id="job-site-help" data-i18n="form.jobSiteHelp">
-                (Optional) Leave blank to include hours only in the combined total.
-                Named sites are grouped below.
+                If you fill this in, your hours for each location are added up
+                separately below.
               </p>
             </div>
 
-            <div class="form-field form-field--full">
+            <div class="form-field">
               <label class="form-label" for="hourly-rate" data-i18n="form.hourlyRate"
                 >Hourly rate</label
               >
@@ -123,30 +190,55 @@
                 />
               </div>
               <p class="form-hint" id="hourly-rate-help" data-i18n="form.hourlyRateHelp">
-                Pay rate for this job site. Used to calculate pay owed on exported PDFs.
+                How much you get paid per hour. We use this to calculate your
+                pay. (You can use a different hourly rate for each job site.)
               </p>
             </div>
 
             <div class="form-section">
-              <h3 class="form-section__title" data-i18n="workTime.title">Work time</h3>
+              <h3 class="form-section__title" data-i18n="workTime.title">Start and end time</h3>
               <div class="form-grid">
                 <div class="form-field">
-                  <label class="form-label" for="start-time" data-i18n="form.start">Start</label>
-                  <input
-                    class="form-input"
-                    type="time"
-                    id="start-time"
-                    required
-                  />
+                  <label class="form-label" for="start-time" data-i18n="form.start">Start time</label>
+                  <div class="time-input">
+                    <input
+                      class="form-input"
+                      type="time"
+                      id="start-time"
+                      required
+                    />
+                    <button
+                      type="button"
+                      class="now-btn"
+                      data-now-target="start-time"
+                      data-i18n="form.now"
+                      data-i18n-aria="form.nowAria"
+                      aria-label="Use the time right now"
+                    >
+                      Now
+                    </button>
+                  </div>
                 </div>
                 <div class="form-field">
-                  <label class="form-label" for="end-time" data-i18n="form.end">End</label>
-                  <input
-                    class="form-input"
-                    type="time"
-                    id="end-time"
-                    required
-                  />
+                  <label class="form-label" for="end-time" data-i18n="form.end">End time</label>
+                  <div class="time-input">
+                    <input
+                      class="form-input"
+                      type="time"
+                      id="end-time"
+                      required
+                    />
+                    <button
+                      type="button"
+                      class="now-btn"
+                      data-now-target="end-time"
+                      data-i18n="form.now"
+                      data-i18n-aria="form.nowAria"
+                      aria-label="Use the time right now"
+                    >
+                      Now
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -154,22 +246,46 @@
             <div class="form-section">
               <h3 class="form-section__title">
                 <span data-i18n="break.title">Break</span>
-                <span class="form-section__optional" data-i18n="break.optional">(optional)</span>
+                <span class="form-section__optional" data-i18n="break.optional">(only if you took one)</span>
               </h3>
               <div class="form-grid">
                 <div class="form-field">
-                  <label class="form-label" for="break-start" data-i18n="break.start">Break start</label>
-                  <input class="form-input" type="time" id="break-start" />
+                  <label class="form-label" for="break-start" data-i18n="break.start">Break started</label>
+                  <div class="time-input">
+                    <input class="form-input" type="time" id="break-start" />
+                    <button
+                      type="button"
+                      class="now-btn"
+                      data-now-target="break-start"
+                      data-i18n="form.now"
+                      data-i18n-aria="form.nowAria"
+                      aria-label="Use the time right now"
+                    >
+                      Now
+                    </button>
+                  </div>
                 </div>
                 <div class="form-field">
-                  <label class="form-label" for="break-end" data-i18n="break.end">Break end</label>
-                  <input class="form-input" type="time" id="break-end" />
+                  <label class="form-label" for="break-end" data-i18n="break.end">Break ended</label>
+                  <div class="time-input">
+                    <input class="form-input" type="time" id="break-end" />
+                    <button
+                      type="button"
+                      class="now-btn"
+                      data-now-target="break-end"
+                      data-i18n="form.now"
+                      data-i18n-aria="form.nowAria"
+                      aria-label="Use the time right now"
+                    >
+                      Now
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
 
             <div class="total-display" id="form-total-display" role="status">
-              Enter all times to see today’s total hours.
+              Fill in your start and end time to see your hours.
             </div>
 
             <p class="form-error" id="form-error" aria-live="polite"></p>
@@ -178,10 +294,10 @@
               <button
                 type="button"
                 id="save-entry-btn"
-                class="btn btn-primary"
+                class="btn btn-primary btn-save"
                 data-i18n="form.saveEntry"
               >
-                Save entry
+                Save this day
               </button>
               <button
                 type="button"
@@ -189,19 +305,23 @@
                 class="btn btn-secondary"
                 data-i18n="form.clearForm"
               >
-                Clear form
+                Start over
               </button>
             </div>
           </form>
         </section>
 
+        <!-- Step 3: review everything you've logged. -->
         <section class="card card--table" aria-labelledby="entries-heading">
           <div class="card__head card__head--entries">
-            <div class="card__head__text">
-              <h2 id="entries-heading" class="card__title" data-i18n="entries.heading">Saved entries</h2>
-              <p class="card__subtitle" data-i18n="entries.subtitle">
-                Stored locally in your browser only.
-              </p>
+            <div class="card__head__row">
+              <span class="step-badge" aria-hidden="true">3</span>
+              <div class="card__head__text">
+                <h2 id="entries-heading" class="card__title" data-i18n="entries.heading">Your saved days</h2>
+                <p class="card__subtitle" data-i18n="entries.subtitle">
+                  Saved on this device only. Nothing is sent anywhere.
+                </p>
+              </div>
             </div>
             <div class="entries-actions">
               <button
@@ -211,7 +331,7 @@
                 data-i18n="entries.export"
                 disabled
               >
-                Export entries
+                Download PDF
               </button>
               <button
                 type="button"
@@ -220,7 +340,7 @@
                 data-i18n="entries.deleteAll"
                 disabled
               >
-                Delete all entries
+                Delete all
               </button>
             </div>
           </div>
@@ -235,12 +355,12 @@
                   <th scope="col" data-i18n="table.date">Date</th>
                   <th scope="col" data-i18n="table.jobSite">Job site</th>
                   <th scope="col" data-i18n="table.hourlyRate">Hourly rate</th>
-                  <th scope="col" data-i18n="table.start">Start</th>
-                  <th scope="col" data-i18n="table.breakStart">Break start</th>
-                  <th scope="col" data-i18n="table.breakEnd">Break end</th>
-                  <th scope="col" data-i18n="table.end">End</th>
-                  <th scope="col" data-i18n="table.total">Total</th>
-                  <th scope="col" data-i18n="table.actions">Actions</th>
+                  <th scope="col" data-i18n="table.start">Start time</th>
+                  <th scope="col" data-i18n="table.breakStart">Break started</th>
+                  <th scope="col" data-i18n="table.breakEnd">Break ended</th>
+                  <th scope="col" data-i18n="table.end">End time</th>
+                  <th scope="col" data-i18n="table.total">Hours</th>
+                  <th scope="col" data-i18n="table.actions">Edit or delete</th>
                 </tr>
               </thead>
               <tbody></tbody>
@@ -248,66 +368,22 @@
           </div>
         </section>
 
-        <section
-          class="card card--summary weekly-summary"
-          aria-labelledby="week-heading"
-        >
-          <h2 id="week-heading" class="visually-hidden" data-i18n="summary.weekHeading">
-            All saved entries
-          </h2>
-          <div class="weekly-summary__inner">
-            <p class="weekly-summary__label" data-i18n="summary.allSaved">All saved entries</p>
-            <div class="weekly-summary__totals">
-              <p class="weekly-summary__value">
-                <span id="weekly-total" class="weekly-summary__figure">0h 0m</span>
-                <span class="weekly-summary__unit" data-i18n="summary.totalUnit">total hours</span>
-              </p>
-              <p class="weekly-summary__value weekly-summary__value--pay">
-                <span id="weekly-total-pay" class="weekly-summary__figure weekly-summary__figure--pay"
-                  >—</span
-                >
-                <span class="weekly-summary__unit" data-i18n="summary.totalPay">total pay owed</span>
-              </p>
-            </div>
-          </div>
-          <div
-            class="weekly-summary__no-site"
-            role="status"
-            aria-live="polite"
-            data-i18n-aria="summary.noSiteAria"
-            aria-label="Hours with no job site"
-          >
-            <span class="weekly-summary__no-site-label" data-i18n="summary.noSiteLabel"
-              >Hours (no job site listed)</span
-            >
-            <span id="weekly-no-site-total" class="weekly-summary__no-site-value">0h 0m</span>
-          </div>
-          <div
-            id="weekly-no-site-pay-row"
-            class="weekly-summary__no-site weekly-summary__no-site--pay"
-            role="status"
-            aria-live="polite"
-            hidden
-          >
-            <span class="weekly-summary__no-site-label" data-i18n="summary.noSitePay"
-              >Pay (no job site listed)</span
-            >
-            <span id="weekly-no-site-pay" class="weekly-summary__no-site-value">—</span>
-          </div>
-        </section>
-
+        <!-- Step 4: per-site breakdown. -->
         <section
           class="card card--breakdown"
           aria-labelledby="breakdown-heading"
         >
           <div class="card__head">
-            <h2 id="breakdown-heading" class="card__title" data-i18n="breakdown.title">
-              All entries by job site
-            </h2>
-            <p class="card__subtitle" data-i18n="breakdown.subtitle">
-              Hours and pay grouped by job site. Entries with no job site listed
-              are included only in the totals above.
-            </p>
+            <span class="step-badge" aria-hidden="true">4</span>
+            <div class="card__head__text">
+              <h2 id="breakdown-heading" class="card__title" data-i18n="breakdown.title">
+                Totals for each job site
+              </h2>
+              <p class="card__subtitle" data-i18n="breakdown.subtitle">
+                Your hours and pay added up for each job site. Days with no job
+                site are only counted in the totals at the top.
+              </p>
+            </div>
           </div>
           <ul
             id="weekly-job-site-list"
@@ -336,14 +412,14 @@
       ></div>
       <div class="delete-dialog__panel">
         <h2 id="delete-confirm-title" class="delete-dialog__title" data-i18n="dialog.deleteTitle">
-          Delete entry
+          Delete this day?
         </h2>
         <p
           id="delete-confirm-message"
           class="delete-dialog__message"
           data-i18n="dialog.deleteMessage"
         >
-          Are you sure you want to delete this entry?
+          This removes this day for good. Are you sure?
         </p>
         <div class="delete-dialog__actions">
           <button
@@ -352,7 +428,7 @@
             id="delete-confirm-no"
             data-i18n="dialog.no"
           >
-            No
+            Cancel
           </button>
           <button
             type="button"
@@ -360,12 +436,21 @@
             id="delete-confirm-yes"
             data-i18n="dialog.yes"
           >
-            Yes
+            Delete
           </button>
         </div>
       </div>
     </div>
 
-    <script src="app.js?v=12" defer></script>
+    <div id="save-toast" class="toast" role="status" aria-live="polite" hidden>
+      <span class="toast__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
+          <path d="M5 12.5l4 4 10-10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </span>
+      <span class="toast__text" id="save-toast-text"></span>
+    </div>
+
+    <script src="app.js?v=14" defer></script>
   </body>
 </html>
