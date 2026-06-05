@@ -439,6 +439,20 @@ function getTodayDateString() {
   return `${year}-${month}-${day}`;
 }
 
+// Set a date input reliably across mobile browsers (iOS Safari, Samsung Internet, etc.).
+function setDateInputValue(input, dateString) {
+  if (!input || !dateString) return;
+  input.value = dateString;
+  input.setAttribute("value", dateString);
+  if ("defaultValue" in input) {
+    input.defaultValue = dateString;
+  }
+}
+
+function setDateInputToToday() {
+  setDateInputValue(dateInput, getTodayDateString());
+}
+
 // Helper: convert a "HH:MM" time string into minutes from midnight.
 // Example: "08:30" -> 8 * 60 + 30 = 510.
 // If timeString is empty or invalid, we return null.
@@ -659,8 +673,9 @@ function migrateLegacyDraftIfNeeded() {
   clearLegacyDraftKeysForDate(lastDate);
 }
 
-// Load unfinished draft into the form (after clearForm defaults). Works across
-// days until the user saves the entry or clears the form.
+// Load unfinished draft into the form (after clearForm defaults). Restores
+// times and other fields, but the date always defaults to today unless the
+// user was mid-edit on a saved entry.
 function loadFormDraftFromStorage() {
   try {
     migrateLegacyDraftIfNeeded();
@@ -671,9 +686,6 @@ function loadFormDraftFromStorage() {
     const d = JSON.parse(raw);
     if (!d || typeof d !== "object") return;
 
-    if (dateInput && typeof d.date === "string" && d.date) {
-      dateInput.value = d.date;
-    }
     if (startInput && typeof d.startTime === "string") {
       startInput.value = d.startTime;
     }
@@ -698,7 +710,15 @@ function loadFormDraftFromStorage() {
       if (exists) {
         editingEntryId = d.editingId;
         if (editingIdInput) editingIdInput.value = d.editingId;
+        const entry = entries.find((e) => e.id === d.editingId);
+        if (entry && dateInput) {
+          setDateInputValue(dateInput, entry.date);
+        }
       }
+    }
+
+    if (!editingEntryId) {
+      setDateInputToToday();
     }
   } catch (error) {
     console.error("Failed to load unfinished draft:", error);
@@ -788,7 +808,7 @@ function refreshFormError() {
 // - leave optional break fields empty
 // - exit edit mode
 function clearForm(options = {}) {
-  dateInput.value = getTodayDateString();
+  setDateInputToToday();
   // Default start and end times assume a typical 9–5 schedule.
   // You can still change these values before saving.
   startInput.value = "09:00";
@@ -805,7 +825,7 @@ function clearForm(options = {}) {
 
 // Put an existing entry back into the form so it can be edited.
 function populateFormFromEntry(entry) {
-  dateInput.value = entry.date;
+  setDateInputValue(dateInput, entry.date);
   if (jobSiteInput) jobSiteInput.value = (entry.jobSite || "").trim();
   if (hourlyRateInput) {
     const rate = getEntryHourlyRate(entry);

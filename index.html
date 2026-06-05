@@ -451,6 +451,21 @@
       <span class="toast__text" id="save-toast-text"></span>
     </div>
 
-    <script src="app.js?v=16" defer></script>
+    <script>
+      (function () {
+        var el = document.getElementById("work-date");
+        if (!el) return;
+        var d = new Date();
+        var s =
+          d.getFullYear() +
+          "-" +
+          String(d.getMonth() + 1).padStart(2, "0") +
+          "-" +
+          String(d.getDate()).padStart(2, "0");
+        el.value = s;
+        el.setAttribute("value", s);
+      })();
+    </script>
+    <script src="app.js?v=17" defer></script>
   </body>
 </html>
