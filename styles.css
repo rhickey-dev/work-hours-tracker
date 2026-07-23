@@ -774,6 +774,17 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+.data-table td[data-col="total"],
+.data-table td[data-col="pay"] {
+  font-weight: 700;
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.data-table td[data-col="pay"] {
+  color: var(--color-accent, #1a4a8f);
+}
+
 .data-table td[data-col="total"] {
   font-weight: 700;
   font-size: 1rem;

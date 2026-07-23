@@ -205,6 +205,7 @@
                       class="form-input"
                       type="time"
                       id="start-time"
+                      step="300"
                       required
                     />
                     <button
@@ -226,6 +227,7 @@
                       class="form-input"
                       type="time"
                       id="end-time"
+                      step="300"
                       required
                     />
                     <button
@@ -252,7 +254,7 @@
                 <div class="form-field">
                   <label class="form-label" for="break-start" data-i18n="break.start">Break started</label>
                   <div class="time-input">
-                    <input class="form-input" type="time" id="break-start" />
+                    <input class="form-input" type="time" id="break-start" step="300" />
                     <button
                       type="button"
                       class="now-btn"
@@ -268,7 +270,7 @@
                 <div class="form-field">
                   <label class="form-label" for="break-end" data-i18n="break.end">Break ended</label>
                   <div class="time-input">
-                    <input class="form-input" type="time" id="break-end" />
+                    <input class="form-input" type="time" id="break-end" step="300" />
                     <button
                       type="button"
                       class="now-btn"
@@ -360,6 +362,7 @@
                   <th scope="col" data-i18n="table.breakEnd">Break ended</th>
                   <th scope="col" data-i18n="table.end">End time</th>
                   <th scope="col" data-i18n="table.total">Hours</th>
+                  <th scope="col" data-i18n="table.pay">Pay</th>
                   <th scope="col" data-i18n="table.actions">Edit or delete</th>
                 </tr>
               </thead>
@@ -466,6 +469,6 @@
         el.setAttribute("value", s);
       })();
     </script>
-    <script src="app.js?v=17" defer></script>
+    <script src="app.js?v=19" defer></script>
   </body>
 </html>

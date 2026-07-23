@@ -83,6 +83,7 @@ const translations = {
     "table.breakEnd": "Break ended",
     "table.end": "End time",
     "table.total": "Hours",
+    "table.pay": "Pay",
     "table.actions": "Edit or delete",
     "summary.weekHeading": "All saved days",
     "summary.allSaved": "All saved days",
@@ -199,6 +200,7 @@ const translations = {
     "table.breakEnd": "Terminó el descanso",
     "table.end": "Hora de fin",
     "table.total": "Horas",
+    "table.pay": "Pago",
     "table.actions": "Editar o eliminar",
     "summary.weekHeading": "Todos los días guardados",
     "summary.allSaved": "Todos los días guardados",
@@ -687,16 +689,16 @@ function loadFormDraftFromStorage() {
     if (!d || typeof d !== "object") return;
 
     if (startInput && typeof d.startTime === "string") {
-      startInput.value = d.startTime;
+      startInput.value = d.startTime ? roundTimeStringToStep(d.startTime) : d.startTime;
     }
     if (breakStartInput && typeof d.breakStart === "string") {
-      breakStartInput.value = d.breakStart;
+      breakStartInput.value = d.breakStart ? roundTimeStringToStep(d.breakStart) : d.breakStart;
     }
     if (breakEndInput && typeof d.breakEnd === "string") {
-      breakEndInput.value = d.breakEnd;
+      breakEndInput.value = d.breakEnd ? roundTimeStringToStep(d.breakEnd) : d.breakEnd;
     }
     if (endInput && typeof d.endTime === "string") {
-      endInput.value = d.endTime;
+      endInput.value = d.endTime ? roundTimeStringToStep(d.endTime) : d.endTime;
     }
     if (jobSiteInput && typeof d.jobSite === "string") {
       jobSiteInput.value = d.jobSite;
@@ -902,12 +904,16 @@ function performEntryDelete(entry) {
 }
 
 function performDeleteAllEntries() {
+  const savedHourlyRate = hourlyRateInput ? hourlyRateInput.value : "";
   entries = [];
   saveEntriesToStorage();
   editingEntryId = null;
   if (editingIdInput) editingIdInput.value = "";
-  clearForm();
-  clearFormDraftFromStorage();
+  clearForm({ preserveHourlyRate: true });
+  if (hourlyRateInput && savedHourlyRate.trim()) {
+    hourlyRateInput.value = savedHourlyRate;
+  }
+  persistFormDraftToStorage();
   renderEntriesTable();
   updateWeeklyTotal();
   updateWeeklyJobSiteBreakdown();
@@ -1376,18 +1382,87 @@ function buildPdfTimesheetBlob() {
   }
 }
 
+function estimatePdfContentHeight(preset, entryCount, summaryRowCount) {
+  let height = preset.headerBand + preset.afterHeader;
+  height += preset.summaryCards + preset.afterCards;
+  height += preset.sectionTitle + preset.entriesTableHeader;
+  height += entryCount * preset.entryRow;
+  height += preset.afterEntries;
+  if (summaryRowCount > 0) {
+    height += preset.jobSiteSectionTitle + preset.jobSiteHeader;
+    height += summaryRowCount * preset.jobSiteRow;
+  }
+  return height;
+}
+
+function pickPdfVerticalPreset(entryCount, summaryRowCount, availableHeight) {
+  const presets = [
+    {
+      headerBand: 58,
+      afterHeader: 14,
+      summaryCards: 44,
+      afterCards: 14,
+      sectionTitle: 24,
+      entriesTableHeader: 22,
+      entryRow: 18,
+      afterEntries: 12,
+      jobSiteSectionTitle: 20,
+      jobSiteHeader: 18,
+      jobSiteRow: 18,
+      entryFontSize: 8,
+    },
+    {
+      headerBand: 46,
+      afterHeader: 10,
+      summaryCards: 36,
+      afterCards: 10,
+      sectionTitle: 18,
+      entriesTableHeader: 18,
+      entryRow: 15,
+      afterEntries: 8,
+      jobSiteSectionTitle: 16,
+      jobSiteHeader: 16,
+      jobSiteRow: 15,
+      entryFontSize: 7,
+    },
+    {
+      headerBand: 38,
+      afterHeader: 8,
+      summaryCards: 30,
+      afterCards: 8,
+      sectionTitle: 14,
+      entriesTableHeader: 16,
+      entryRow: 13,
+      afterEntries: 6,
+      jobSiteSectionTitle: 12,
+      jobSiteHeader: 14,
+      jobSiteRow: 13,
+      entryFontSize: 7,
+    },
+  ];
+
+  for (const preset of presets) {
+    if (estimatePdfContentHeight(preset, entryCount, summaryRowCount) <= availableHeight) {
+      return preset;
+    }
+  }
+
+  return presets[presets.length - 1];
+}
+
 function buildPdfTimesheetBlobInner() {
   const sorted = getSortedEntries();
   // Landscape Letter: 9 full-header columns plus long job-site names need the
   // extra horizontal room to stay readable and never overlap.
   const pageWidth = 792;
   const pageHeight = 612;
-  const marginLeft = 48;
-  const marginRight = 48;
-  const topMargin = 44;
-  const bottomMargin = 56;
+  const marginLeft = 40;
+  const marginRight = 40;
+  const topMargin = 32;
+  const bottomMargin = 40;
   const usableWidth = pageWidth - marginLeft - marginRight;
   const contentRight = marginLeft + usableWidth;
+  const availableHeight = pageHeight - topMargin - bottomMargin;
   const colors = {
     ink: [0.12, 0.15, 0.2],
     muted: [0.42, 0.46, 0.52],
@@ -1404,10 +1479,17 @@ function buildPdfTimesheetBlobInner() {
     onAccentSoft: [0.8, 0.87, 0.96],
   };
   const entryLayout = buildEntriesPdfLayout(sorted, pageWidth, marginLeft, marginRight);
-  const ec = entryLayout.columns;
-  const entryFontSize = entryLayout.fontSize;
-  const pages = [];
   const summaryRows = getJobSiteSummaryRows(sorted);
+  const verticalPreset = pickPdfVerticalPreset(
+    sorted.length,
+    summaryRows.length,
+    availableHeight
+  );
+  entryLayout.headerRowHeight = verticalPreset.entriesTableHeader;
+  entryLayout.rowHeight = verticalPreset.entryRow;
+  const entryFontSize = verticalPreset.entryFontSize;
+  const ec = entryLayout.columns;
+  const pages = [];
   const namedSiteRows = getNamedJobSiteSummaryRows(sorted);
   const dateRange = getDateRangeLabel(sorted);
   const workerName = getUserNameForPdf().trim();
@@ -1460,63 +1542,50 @@ function buildPdfTimesheetBlobInner() {
     ops.push({ type: "line", x1, y1: lineY, x2, y2: lineY, color, width });
   };
 
-  const ensureSpace = (height, options = {}) => {
-    if (y + height <= pageHeight - bottomMargin) return;
-    createPage();
-    drawHeaderBand(true);
-    if (options.repeatTableHeader) {
-      drawTableHeader();
-    }
+  const ensureSpace = () => {
+    /* Single-page PDF: vertical preset is chosen up front to fit everything. */
   };
 
-  // Branded header band. Full size on the first page; compact on continuations.
-  const drawHeaderBand = (continued = false) => {
-    const bandH = continued ? 36 : 74;
+  // Branded header band sized to keep the full report on one page.
+  const drawHeaderBand = () => {
+    const bandH = verticalPreset.headerBand;
     addRect(marginLeft, y, usableWidth, bandH, colors.accent);
 
-    if (continued) {
-      addText(`${titleText} ${t("pdf.continued")}`, marginLeft + 18, y + 23, 13, {
+    addText(t("pdf.eyebrow").toUpperCase(), marginLeft + 16, y + bandH * 0.38, 7.5, {
+      font: "bold",
+      color: colors.onAccentSoft,
+    });
+    addText(
+      truncatePdfText(titleText, usableWidth * 0.55, Math.min(18, bandH * 0.42)),
+      marginLeft + 16,
+      y + bandH * 0.78,
+      Math.min(18, bandH * 0.42),
+      {
         font: "bold",
         color: colors.onAccent,
-      });
-      addTextRight(dateRange, contentRight - 18, y + 23, 10, {
-        color: colors.onAccentSoft,
-        maxWidth: usableWidth * 0.4,
-        rightInset: 0,
-      });
-      y += bandH + 16;
-      return;
-    }
+      }
+    );
 
-    addText(t("pdf.eyebrow").toUpperCase(), marginLeft + 20, y + 25, 8.5, {
+    addTextRight(t("pdf.dateRange").toUpperCase(), contentRight - 16, y + bandH * 0.38, 7.5, {
       font: "bold",
       color: colors.onAccentSoft,
-    });
-    addText(truncatePdfText(titleText, usableWidth * 0.6, 22), marginLeft + 20, y + 52, 22, {
-      font: "bold",
-      color: colors.onAccent,
-    });
-
-    addTextRight(t("pdf.dateRange").toUpperCase(), contentRight - 20, y + 25, 8.5, {
-      font: "bold",
-      color: colors.onAccentSoft,
-      maxWidth: usableWidth * 0.5,
+      maxWidth: usableWidth * 0.45,
       rightInset: 0,
     });
-    addTextRight(dateRange, contentRight - 20, y + 48, 13, {
+    addTextRight(dateRange, contentRight - 16, y + bandH * 0.78, 11, {
       font: "bold",
       color: colors.onAccent,
-      maxWidth: usableWidth * 0.5,
+      maxWidth: usableWidth * 0.45,
       rightInset: 0,
     });
-    y += bandH + 22;
+    y += bandH + verticalPreset.afterHeader;
   };
 
   const drawSectionTitle = (title) => {
-    ensureSpace(34);
-    addRect(marginLeft, y - 10, 4, 14, colors.accent);
-    addText(title, marginLeft + 13, y, 14, { font: "bold" });
-    y += 16;
+    ensureSpace();
+    addRect(marginLeft, y - 8, 3, 11, colors.accent);
+    addText(title, marginLeft + 10, y, 11, { font: "bold" });
+    y += verticalPreset.sectionTitle;
   };
 
   const drawSummaryCards = () => {
@@ -1527,26 +1596,26 @@ function buildPdfTimesheetBlobInner() {
     cards.push({ label: t("pdf.entriesCount"), value: String(sorted.length) });
     cards.push({ label: t("pdf.jobSites"), value: String(namedSiteRows.length) });
 
-    const cardH = 58;
-    const cardGap = 14;
+    const cardH = verticalPreset.summaryCards;
+    const cardGap = 10;
     const cardWidth = (usableWidth - cardGap * (cards.length - 1)) / cards.length;
-    ensureSpace(cardH + 6);
+    ensureSpace();
     const top = y;
 
     cards.forEach((card, index) => {
       const x = marginLeft + index * (cardWidth + cardGap);
       addRect(x, top, cardWidth, cardH, colors.cardFill);
-      addRect(x, top, 3.5, cardH, card.highlight ? colors.accent : colors.accentSoft);
-      addText(truncatePdfText(card.label, cardWidth - 22, 8.5), x + 14, top + 22, 8.5, {
+      addRect(x, top, 3, cardH, card.highlight ? colors.accent : colors.accentSoft);
+      addText(truncatePdfText(card.label, cardWidth - 18, 7.5), x + 10, top + cardH * 0.42, 7.5, {
         color: colors.muted,
       });
-      addText(truncatePdfText(card.value, cardWidth - 22, 16), x + 14, top + 45, 16, {
+      addText(truncatePdfText(card.value, cardWidth - 18, 13), x + 10, top + cardH * 0.82, 13, {
         font: "bold",
         color: card.highlight ? colors.accent : colors.ink,
       });
     });
 
-    y = top + cardH + 26;
+    y = top + cardH + verticalPreset.afterCards;
   };
 
   const drawTableHeader = () => {
@@ -1581,7 +1650,7 @@ function buildPdfTimesheetBlobInner() {
   };
 
   createPage();
-  drawHeaderBand(false);
+  drawHeaderBand();
   drawSummaryCards();
 
   drawSectionTitle(t("pdf.entriesSection"));
@@ -1590,13 +1659,13 @@ function buildPdfTimesheetBlobInner() {
   const emptyCell = t("table.emptyCell");
   sorted.forEach((entry, index) => {
     const rowHeight = entryLayout.rowHeight;
-    ensureSpace(rowHeight + 8, { repeatTableHeader: true });
+    ensureSpace();
 
     if (index % 2 === 1) {
       addRect(marginLeft, y, usableWidth, rowHeight, colors.rowAlt);
     }
 
-    const ry = y + rowHeight - 7;
+    const ry = y + rowHeight - 5;
 
     addText(entry.date, ec.date.x, ry, entryFontSize);
     addText(
@@ -1640,93 +1709,79 @@ function buildPdfTimesheetBlobInner() {
     y += rowHeight;
   });
 
-  y += 26;
-  drawSectionTitle(t("pdf.summarySection"));
+  if (summaryRows.length > 0) {
+    y += verticalPreset.afterEntries;
+    drawSectionTitle(t("pdf.summaryByJobSite"));
 
-  ensureSpace(30);
-  const labelGap = Math.max(
-    120,
-    pdfTextWidth(`${t("pdf.summaryTotalHours")}:`, 10, false),
-    pdfTextWidth(`${t("pdf.summaryTotalPay")}:`, 10, false)
-  );
-  addText(`${t("pdf.summaryTotalHours")}:`, marginLeft, y + 2, 10, { color: colors.muted });
-  addText(totalHoursStr, marginLeft + labelGap, y + 2, 13, { font: "bold" });
-  if (totalPayStr) {
-    y += 24;
-    addText(`${t("pdf.summaryTotalPay")}:`, marginLeft, y + 2, 10, { color: colors.muted });
-    addText(totalPayStr, marginLeft + labelGap, y + 2, 13, { font: "bold", color: colors.accent });
-  }
-  y += 24;
-  addLine(marginLeft, y, contentRight, colors.border, 1);
-  y += 22;
+    const summaryHoursRight = hasPayData
+      ? entryLayout.tableRight - ec.pay.width - ec.total.width - 20
+      : entryLayout.tableRight;
 
-  addText(t("pdf.summaryByJobSite"), marginLeft, y, 12, { font: "bold" });
-  y += 16;
-
-  const summaryHoursRight = hasPayData
-    ? entryLayout.tableRight - ec.pay.width - ec.total.width - 24
-    : entryLayout.tableRight;
-
-  const drawJobSiteHeader = () => {
-    addRect(marginLeft, y, usableWidth, 22, colors.headFill);
-    const hy = y + 15;
-    addText(t("table.jobSite"), marginLeft + 12, hy, 9, {
-      font: "bold",
-      color: colors.headInk,
-    });
-    addTextRight(t("breakdown.hours"), summaryHoursRight, hy, 9, {
-      font: "bold",
-      color: colors.headInk,
-      maxWidth: ec.total.width + 20,
-      rightInset: 2,
-    });
-    if (hasPayData) {
-      addTextRight(t("pdf.payOwed"), entryLayout.tableRight, hy, 9, {
+    const drawJobSiteHeader = () => {
+      const headerH = verticalPreset.jobSiteHeader;
+      addRect(marginLeft, y, usableWidth, headerH, colors.headFill);
+      const hy = y + headerH - 5;
+      addText(t("table.jobSite"), marginLeft + 10, hy, entryFontSize, {
         font: "bold",
         color: colors.headInk,
-        maxWidth: ec.pay.width,
+      });
+      addTextRight(t("breakdown.hours"), summaryHoursRight, hy, entryFontSize, {
+        font: "bold",
+        color: colors.headInk,
+        maxWidth: ec.total.width + 20,
         rightInset: 2,
       });
-    }
-    addLine(marginLeft, y + 22, contentRight, colors.accent, 1.2);
-    y += 22;
-  };
+      if (hasPayData) {
+        addTextRight(t("pdf.payOwed"), entryLayout.tableRight, hy, entryFontSize, {
+          font: "bold",
+          color: colors.headInk,
+          maxWidth: ec.pay.width,
+          rightInset: 2,
+        });
+      }
+      addLine(marginLeft, y + headerH, contentRight, colors.accent, 1);
+      y += headerH;
+    };
 
-  ensureSpace(40);
-  drawJobSiteHeader();
+    drawJobSiteHeader();
 
-  summaryRows.forEach((row, index) => {
-    const nameMaxWidth = hasPayData
-      ? summaryHoursRight - marginLeft - ec.total.width - 28
-      : entryLayout.tableRight - marginLeft - 24;
-    const wrappedName = wrapPdfText(row.label, nameMaxWidth, 10);
-    const rowHeight = Math.max(24, wrappedName.length * 13 + 8);
-    ensureSpace(rowHeight + 4);
-
-    if (index % 2 === 1) {
-      addRect(marginLeft, y, usableWidth, rowHeight, colors.rowAlt);
-    }
-
-    wrappedName.forEach((line, lineIndex) => {
-      addText(line, marginLeft + 12, y + 16 + lineIndex * 13, 10);
-    });
-    addTextRight(formatMinutesAsHoursString(row.minutes), summaryHoursRight, y + 16, 10, {
-      font: "bold",
-      maxWidth: ec.total.width + 20,
-      rightInset: 2,
-    });
-    if (hasPayData) {
-      addTextRight(
-        row.hasPay ? formatPayAmount(row.pay) : emptyCell,
-        entryLayout.tableRight,
-        y + 16,
-        10,
-        { font: row.hasPay ? "bold" : "regular", maxWidth: ec.pay.width, rightInset: 2 }
+    summaryRows.forEach((row, index) => {
+      const nameMaxWidth = hasPayData
+        ? summaryHoursRight - marginLeft - ec.total.width - 24
+        : entryLayout.tableRight - marginLeft - 20;
+      const wrappedName = wrapPdfText(row.label, nameMaxWidth, entryFontSize);
+      const rowHeight = Math.max(
+        verticalPreset.jobSiteRow,
+        wrappedName.length * (verticalPreset.jobSiteRow - 2) + 6
       );
-    }
-    addLine(marginLeft, y + rowHeight, contentRight, colors.hair, 0.6);
-    y += rowHeight;
-  });
+      ensureSpace();
+
+      if (index % 2 === 1) {
+        addRect(marginLeft, y, usableWidth, rowHeight, colors.rowAlt);
+      }
+
+      const lineY = y + rowHeight - 5;
+      wrappedName.forEach((line, lineIndex) => {
+        addText(line, marginLeft + 10, lineY - (wrappedName.length - 1 - lineIndex) * 11, entryFontSize);
+      });
+      addTextRight(formatMinutesAsHoursString(row.minutes), summaryHoursRight, lineY, entryFontSize, {
+        font: "bold",
+        maxWidth: ec.total.width + 20,
+        rightInset: 2,
+      });
+      if (hasPayData) {
+        addTextRight(
+          row.hasPay ? formatPayAmount(row.pay) : emptyCell,
+          entryLayout.tableRight,
+          lineY,
+          entryFontSize,
+          { font: row.hasPay ? "bold" : "regular", maxWidth: ec.pay.width, rightInset: 2 }
+        );
+      }
+      addLine(marginLeft, y + rowHeight, contentRight, colors.hair, 0.6);
+      y += rowHeight;
+    });
+  }
 
   const totalPages = pages.length;
   pages.forEach((pageOps, index) => {
@@ -1823,7 +1878,7 @@ function renderEntriesTable() {
     const row = document.createElement("tr");
     row.className = "data-table__empty";
     const cell = document.createElement("td");
-    cell.colSpan = 9;
+    cell.colSpan = 10;
     cell.textContent = t("empty.noEntries");
     row.appendChild(cell);
     entriesTableBody.appendChild(row);
@@ -1878,6 +1933,12 @@ function renderEntriesTable() {
     totalCell.textContent = formatMinutesAsHoursString(entry.totalMinutes);
     totalCell.dataset.label = t("table.total");
     totalCell.dataset.col = "total";
+
+    const payCell = document.createElement("td");
+    payCell.textContent = formatEntryPayDisplay(entry);
+    payCell.className = "data-table__pay";
+    payCell.dataset.label = t("table.pay");
+    payCell.dataset.col = "pay";
 
     // "Show more / Show less" reveals times, hourly rate, and breaks; hidden by
     // default so each saved day stays compact on every screen size.
@@ -1936,6 +1997,7 @@ function renderEntriesTable() {
     row.appendChild(breakEndCell);
     row.appendChild(endCell);
     row.appendChild(totalCell);
+    row.appendChild(payCell);
     row.appendChild(toggleCell);
     row.appendChild(actionsCell);
 
@@ -2092,16 +2154,46 @@ function showSaveToast(messageKey) {
   }, 2200);
 }
 
+// Time inputs snap to five-minute increments (300 seconds).
+const TIME_INPUT_STEP_MINUTES = 5;
+const TIME_INPUT_STEP_SECONDS = TIME_INPUT_STEP_MINUTES * 60;
+
 // Pad a number to two digits for "HH:MM" time-input values.
 function pad2(n) {
   return String(n).padStart(2, "0");
+}
+
+function roundMinutesToStep(totalMinutes, stepMinutes = TIME_INPUT_STEP_MINUTES) {
+  const rounded = Math.round(totalMinutes / stepMinutes) * stepMinutes;
+  return ((rounded % (24 * 60)) + 24 * 60) % (24 * 60);
+}
+
+function roundTimeStringToStep(timeStr, stepMinutes = TIME_INPUT_STEP_MINUTES) {
+  if (!timeStr || !/^\d{2}:\d{2}$/.test(timeStr)) return timeStr;
+  const [hours, minutes] = timeStr.split(":").map(Number);
+  const totalMinutes = hours * 60 + minutes;
+  const rounded = roundMinutesToStep(totalMinutes, stepMinutes);
+  const nextHours = Math.floor(rounded / 60);
+  const nextMinutes = rounded % 60;
+  return `${pad2(nextHours)}:${pad2(nextMinutes)}`;
+}
+
+function snapTimeInputToStep(input) {
+  if (!input || input.type !== "time" || !input.value) return;
+  const rounded = roundTimeStringToStep(input.value);
+  if (rounded !== input.value) {
+    input.value = rounded;
+  }
 }
 
 // Fill a time field with the current clock time and refresh the live total.
 function setTimeFieldToNow(input) {
   if (!input) return;
   const now = new Date();
-  input.value = `${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+  const rounded = roundMinutesToStep(now.getHours() * 60 + now.getMinutes());
+  const hours = Math.floor(rounded / 60);
+  const minutes = rounded % 60;
+  input.value = `${pad2(hours)}:${pad2(minutes)}`;
   input.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
@@ -2114,10 +2206,10 @@ function handleFormSubmit(event) {
   const date = dateInput.value || getTodayDateString();
   const jobSite = jobSiteInput ? jobSiteInput.value.trim() : "";
   const hourlyRate = getHourlyRateFromForm();
-  const start = startInput.value;
-  const brkStart = breakStartInput.value;
-  const brkEnd = breakEndInput.value;
-  const end = endInput.value;
+  const start = roundTimeStringToStep(startInput.value);
+  const brkStart = breakStartInput.value ? roundTimeStringToStep(breakStartInput.value) : "";
+  const brkEnd = breakEndInput.value ? roundTimeStringToStep(breakEndInput.value) : "";
+  const end = roundTimeStringToStep(endInput.value);
 
   // Basic validation: date, start, and end are required; job site is optional.
   if (!date || !start || !end) {
@@ -2285,12 +2377,21 @@ document.addEventListener("DOMContentLoaded", () => {
     persistFormDraftToStorage();
   };
 
+  const onTimeFieldChange = (event) => {
+    snapTimeInputToStep(event.target);
+    onFormFieldChange();
+  };
+
   dateInput.addEventListener("change", onFormFieldChange);
   dateInput.addEventListener("input", onFormFieldChange);
-  startInput.addEventListener("input", onFormFieldChange);
-  breakStartInput.addEventListener("input", onFormFieldChange);
-  breakEndInput.addEventListener("input", onFormFieldChange);
-  endInput.addEventListener("input", onFormFieldChange);
+  startInput.addEventListener("input", onTimeFieldChange);
+  startInput.addEventListener("change", onTimeFieldChange);
+  breakStartInput.addEventListener("input", onTimeFieldChange);
+  breakStartInput.addEventListener("change", onTimeFieldChange);
+  breakEndInput.addEventListener("input", onTimeFieldChange);
+  breakEndInput.addEventListener("change", onTimeFieldChange);
+  endInput.addEventListener("input", onTimeFieldChange);
+  endInput.addEventListener("change", onTimeFieldChange);
   if (jobSiteInput) {
     jobSiteInput.addEventListener("input", onFormFieldChange);
   }
