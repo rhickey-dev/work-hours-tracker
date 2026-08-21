@@ -13,7 +13,7 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=7" />
+    <link rel="stylesheet" href="styles.css?v=8" />
   </head>
   <body>
     <div class="app">
@@ -205,7 +205,6 @@
                       class="form-input"
                       type="time"
                       id="start-time"
-                      step="300"
                       required
                     />
                     <button
@@ -227,7 +226,6 @@
                       class="form-input"
                       type="time"
                       id="end-time"
-                      step="300"
                       required
                     />
                     <button
@@ -254,7 +252,7 @@
                 <div class="form-field">
                   <label class="form-label" for="break-start" data-i18n="break.start">Break started</label>
                   <div class="time-input">
-                    <input class="form-input" type="time" id="break-start" step="300" />
+                    <input class="form-input" type="time" id="break-start" />
                     <button
                       type="button"
                       class="now-btn"
@@ -270,7 +268,7 @@
                 <div class="form-field">
                   <label class="form-label" for="break-end" data-i18n="break.end">Break ended</label>
                   <div class="time-input">
-                    <input class="form-input" type="time" id="break-end" step="300" />
+                    <input class="form-input" type="time" id="break-end" />
                     <button
                       type="button"
                       class="now-btn"
@@ -469,6 +467,6 @@
         el.setAttribute("value", s);
       })();
     </script>
-    <script src="app.js?v=21" defer></script>
+    <script src="app.js?v=22" defer></script>
   </body>
 </html>
