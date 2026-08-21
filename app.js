@@ -44,6 +44,10 @@ const translations = {
     "entry.subtitle": "Fill in the boxes below, then press Save.",
     "form.now": "Now",
     "form.nowAria": "Use the time right now",
+    "form.hourAria": "Hour",
+    "form.minuteAria": "Minutes",
+    "form.periodAria": "a.m. or p.m.",
+    "form.timeNone": "None",
     "form.userName": "Your name",
     "form.userNameHelp": "This appears at the top of your PDF.",
     "form.userNamePlaceholder": "Type your name",
@@ -161,6 +165,10 @@ const translations = {
     "entry.subtitle": "Completa las casillas de abajo y presiona Guardar.",
     "form.now": "Ahora",
     "form.nowAria": "Usar la hora actual",
+    "form.hourAria": "Hora",
+    "form.minuteAria": "Minutos",
+    "form.periodAria": "a. m. o p. m.",
+    "form.timeNone": "Ninguna",
     "form.userName": "Tu nombre",
     "form.userNameHelp": "Aparece en la parte superior de tu PDF.",
     "form.userNamePlaceholder": "Escribe tu nombre",
@@ -689,16 +697,16 @@ function loadFormDraftFromStorage() {
     if (!d || typeof d !== "object") return;
 
     if (startInput && typeof d.startTime === "string") {
-      startInput.value = d.startTime ? roundTimeStringToStep(d.startTime) : d.startTime;
+      setTimeInputValue(startInput, d.startTime);
     }
     if (breakStartInput && typeof d.breakStart === "string") {
-      breakStartInput.value = d.breakStart ? roundTimeStringToStep(d.breakStart) : d.breakStart;
+      setTimeInputValue(breakStartInput, d.breakStart);
     }
     if (breakEndInput && typeof d.breakEnd === "string") {
-      breakEndInput.value = d.breakEnd ? roundTimeStringToStep(d.breakEnd) : d.breakEnd;
+      setTimeInputValue(breakEndInput, d.breakEnd);
     }
     if (endInput && typeof d.endTime === "string") {
-      endInput.value = d.endTime ? roundTimeStringToStep(d.endTime) : d.endTime;
+      setTimeInputValue(endInput, d.endTime);
     }
     if (jobSiteInput && typeof d.jobSite === "string") {
       jobSiteInput.value = d.jobSite;
@@ -813,10 +821,10 @@ function clearForm(options = {}) {
   setDateInputToToday();
   // Default start and end times assume a typical 9–5 schedule.
   // You can still change these values before saving.
-  startInput.value = "09:00";
-  breakStartInput.value = "";
-  breakEndInput.value = "";
-  endInput.value = "17:00";
+  setTimeInputValue(startInput, "09:00");
+  setTimeInputValue(breakStartInput, "");
+  setTimeInputValue(breakEndInput, "");
+  setTimeInputValue(endInput, "17:00");
   if (jobSiteInput) jobSiteInput.value = "";
   if (!options.preserveHourlyRate && hourlyRateInput) hourlyRateInput.value = "";
   editingEntryId = null;
@@ -833,10 +841,10 @@ function populateFormFromEntry(entry) {
     const rate = getEntryHourlyRate(entry);
     hourlyRateInput.value = rate !== null ? String(rate) : "";
   }
-  startInput.value = entry.startTime;
-  breakStartInput.value = entry.breakStart || "";
-  breakEndInput.value = entry.breakEnd || "";
-  endInput.value = entry.endTime;
+  setTimeInputValue(startInput, entry.startTime);
+  setTimeInputValue(breakStartInput, entry.breakStart || "");
+  setTimeInputValue(breakEndInput, entry.breakEnd || "");
+  setTimeInputValue(endInput, entry.endTime);
   editingEntryId = entry.id;
   editingIdInput.value = entry.id;
   setFormError(null);
@@ -2154,9 +2162,11 @@ function showSaveToast(messageKey) {
   }, 2200);
 }
 
-// Time inputs snap to five-minute increments (300 seconds).
+// Time pickers use five-minute increments. Native <input type="time" step>
+// is ignored by iOS and many Android browsers, so we replace those fields
+// with hour / minute / a.m.–p.m. dropdowns that only list valid steps.
 const TIME_INPUT_STEP_MINUTES = 5;
-const TIME_INPUT_STEP_SECONDS = TIME_INPUT_STEP_MINUTES * 60;
+const timePickers = new WeakMap();
 
 // Pad a number to two digits for "HH:MM" time-input values.
 function pad2(n) {
@@ -2169,31 +2179,164 @@ function roundMinutesToStep(totalMinutes, stepMinutes = TIME_INPUT_STEP_MINUTES)
 }
 
 function roundTimeStringToStep(timeStr, stepMinutes = TIME_INPUT_STEP_MINUTES) {
-  if (!timeStr || !/^\d{2}:\d{2}$/.test(timeStr)) return timeStr;
-  const [hours, minutes] = timeStr.split(":").map(Number);
-  const totalMinutes = hours * 60 + minutes;
-  const rounded = roundMinutesToStep(totalMinutes, stepMinutes);
+  if (!timeStr) return timeStr;
+  const match = /^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec(String(timeStr).trim());
+  if (!match) return timeStr;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours > 23 || minutes > 59) return timeStr;
+  const rounded = roundMinutesToStep(hours * 60 + minutes, stepMinutes);
   const nextHours = Math.floor(rounded / 60);
   const nextMinutes = rounded % 60;
   return `${pad2(nextHours)}:${pad2(nextMinutes)}`;
 }
 
-function snapTimeInputToStep(input) {
-  if (!input || input.type !== "time" || !input.value) return;
-  const rounded = roundTimeStringToStep(input.value);
-  if (rounded !== input.value) {
-    input.value = rounded;
+function timeStringToPickerState(timeStr) {
+  const rounded = roundTimeStringToStep(timeStr);
+  const match = /^(\d{2}):(\d{2})$/.exec(rounded || "");
+  if (!match) return { hour: "", minute: "", period: "" };
+  const h24 = Number(match[1]);
+  const period = h24 >= 12 ? "pm" : "am";
+  let hour12 = h24 % 12;
+  if (hour12 === 0) hour12 = 12;
+  return { hour: String(hour12), minute: match[2], period };
+}
+
+function pickerStateToTimeString(hour, minute, period) {
+  if (!hour || !minute || !period) return "";
+  let h24 = Number(hour);
+  if (period === "am") {
+    if (h24 === 12) h24 = 0;
+  } else if (h24 !== 12) {
+    h24 += 12;
   }
+  return `${pad2(h24)}:${minute}`;
+}
+
+function addTimeSelectOption(select, value, label, i18nKey) {
+  const option = document.createElement("option");
+  option.value = value;
+  option.textContent = label;
+  if (i18nKey) option.setAttribute("data-i18n", i18nKey);
+  select.appendChild(option);
+}
+
+function syncTimePickerFromInput(input) {
+  const picker = timePickers.get(input);
+  if (!picker) return;
+  const state = timeStringToPickerState(input.value);
+  picker.hourSel.value = state.hour;
+  picker.minSel.value = state.minute;
+  picker.periodSel.value = state.period;
+}
+
+function setTimeInputValue(input, value) {
+  if (!input) return;
+  if (!value) {
+    input.value = "";
+  } else {
+    const rounded = roundTimeStringToStep(value);
+    input.value = /^\d{2}:\d{2}$/.test(rounded) ? rounded : "";
+  }
+  syncTimePickerFromInput(input);
+}
+
+function createTimeSelect(className, ariaKey) {
+  const select = document.createElement("select");
+  select.className = `form-input time-picker__select ${className}`;
+  select.setAttribute("data-i18n-aria", ariaKey);
+  select.setAttribute("aria-label", t(ariaKey));
+  select.setAttribute("autocomplete", "off");
+  return select;
+}
+
+function upgradeTimeInput(input) {
+  if (!input || timePickers.has(input)) return;
+
+  const required = input.hasAttribute("required");
+  const wrapper = document.createElement("div");
+  wrapper.className = "time-picker";
+  wrapper.setAttribute("role", "group");
+
+  const label = document.querySelector(`label[for="${input.id}"]`);
+  if (label) {
+    if (!label.id) label.id = `${input.id}-label`;
+    wrapper.setAttribute("aria-labelledby", label.id);
+  }
+
+  const hourSel = createTimeSelect("time-picker__hour", "form.hourAria");
+  hourSel.id = `${input.id}-hour`;
+  const minSel = createTimeSelect("time-picker__minute", "form.minuteAria");
+  minSel.id = `${input.id}-minute`;
+  const periodSel = createTimeSelect("time-picker__period", "form.periodAria");
+  periodSel.id = `${input.id}-period`;
+
+  if (!required) {
+    addTimeSelectOption(hourSel, "", t("form.timeNone"), "form.timeNone");
+    addTimeSelectOption(minSel, "", t("form.timeNone"), "form.timeNone");
+    addTimeSelectOption(periodSel, "", t("form.timeNone"), "form.timeNone");
+  }
+
+  for (let h = 1; h <= 12; h += 1) {
+    addTimeSelectOption(hourSel, String(h), String(h));
+  }
+  for (let m = 0; m < 60; m += TIME_INPUT_STEP_MINUTES) {
+    const value = pad2(m);
+    addTimeSelectOption(minSel, value, value);
+  }
+  addTimeSelectOption(periodSel, "am", t("time.am"), "time.am");
+  addTimeSelectOption(periodSel, "pm", t("time.pm"), "time.pm");
+
+  if (label) label.htmlFor = hourSel.id;
+
+  const colon = document.createElement("span");
+  colon.className = "time-picker__sep";
+  colon.setAttribute("aria-hidden", "true");
+  colon.textContent = ":";
+
+  input.type = "hidden";
+  input.classList.remove("form-input");
+  input.removeAttribute("step");
+  input.parentNode.insertBefore(wrapper, input);
+  wrapper.append(input, hourSel, colon, minSel, periodSel);
+
+  timePickers.set(input, { hourSel, minSel, periodSel, required });
+  syncTimePickerFromInput(input);
+
+  const onPickerChange = (changedSelect) => {
+    if (!required && changedSelect.value === "") {
+      hourSel.value = "";
+      minSel.value = "";
+      periodSel.value = "";
+    } else {
+      if (!hourSel.value) hourSel.value = "12";
+      if (!minSel.value) minSel.value = "00";
+      if (!periodSel.value) periodSel.value = "am";
+    }
+    input.value = pickerStateToTimeString(hourSel.value, minSel.value, periodSel.value);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  };
+
+  hourSel.addEventListener("change", () => onPickerChange(hourSel));
+  minSel.addEventListener("change", () => onPickerChange(minSel));
+  periodSel.addEventListener("change", () => onPickerChange(periodSel));
+}
+
+function upgradeTimeInputs(inputs) {
+  inputs.forEach((input) => upgradeTimeInput(input));
+}
+
+function snapTimeInputToStep(input) {
+  if (!input || !input.value) return;
+  setTimeInputValue(input, input.value);
 }
 
 // Fill a time field with the current clock time and refresh the live total.
 function setTimeFieldToNow(input) {
   if (!input) return;
   const now = new Date();
-  const rounded = roundMinutesToStep(now.getHours() * 60 + now.getMinutes());
-  const hours = Math.floor(rounded / 60);
-  const minutes = rounded % 60;
-  input.value = `${pad2(hours)}:${pad2(minutes)}`;
+  setTimeInputValue(input, `${pad2(now.getHours())}:${pad2(now.getMinutes())}`);
   input.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
@@ -2318,6 +2461,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
   applyStaticI18n();
+  upgradeTimeInputs([startInput, breakStartInput, breakEndInput, endInput]);
 
   if (userNameInput) {
     userNameInput.value = loadUserNameFromStorage();

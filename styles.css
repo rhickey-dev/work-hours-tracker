@@ -472,12 +472,55 @@ body {
 .time-input {
   display: flex;
   align-items: stretch;
+  flex-wrap: wrap;
   gap: var(--space-xs);
 }
 
 .time-input .form-input {
   flex: 1;
   min-width: 0;
+}
+
+.time-picker {
+  display: flex;
+  align-items: stretch;
+  gap: 0.3rem;
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.time-picker__select {
+  min-width: 0;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: var(--color-surface);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235a6678' d='M3 4.5L6 8l3-3.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  padding-left: 0.5rem;
+  padding-right: 1.55rem;
+}
+
+.time-picker .time-picker__hour,
+.time-picker .time-picker__minute {
+  flex: 1.1 1 0;
+}
+
+.time-picker .time-picker__period {
+  flex: 1.4 1 0;
+}
+
+.time-picker__sep {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  line-height: 1;
 }
 
 .now-btn {
