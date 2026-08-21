@@ -46,8 +46,12 @@ const translations = {
     "form.nowAria": "Use the time right now",
     "form.hourAria": "Hour",
     "form.minuteAria": "Minutes",
-    "form.periodAria": "a.m. or p.m.",
+    "form.periodAria": "AM or PM",
     "form.timeNone": "None",
+    "form.timeReset": "Reset",
+    "form.timeDone": "Done",
+    "time.periodAm": "AM",
+    "time.periodPm": "PM",
     "form.userName": "Your name",
     "form.userNameHelp": "This appears at the top of your PDF.",
     "form.userNamePlaceholder": "Type your name",
@@ -169,6 +173,10 @@ const translations = {
     "form.minuteAria": "Minutos",
     "form.periodAria": "a. m. o p. m.",
     "form.timeNone": "Ninguna",
+    "form.timeReset": "Restablecer",
+    "form.timeDone": "Listo",
+    "time.periodAm": "a.m.",
+    "time.periodPm": "p.m.",
     "form.userName": "Tu nombre",
     "form.userNameHelp": "Aparece en la parte superior de tu PDF.",
     "form.userNamePlaceholder": "Escribe tu nombre",
@@ -418,6 +426,7 @@ function applyStaticI18n() {
 
 function refreshAllTranslatedUI() {
   applyStaticI18n();
+  refreshTimePickersI18n();
   updateFormTotalDisplay({ preserveFormError: true });
   refreshFormError();
   renderEntriesTable();
@@ -2162,13 +2171,13 @@ function showSaveToast(messageKey) {
   }, 2200);
 }
 
-// Time pickers use five-minute increments. Native <input type="time" step>
-// is ignored by iOS and many Android browsers, so we replace those fields
-// with hour / minute / a.m.–p.m. dropdowns that only list valid steps.
+// iOS-style time wheels with five-minute increments.
+// iPhone's native <input type="time"> always shows every minute (Safari
+// ignores step), so we draw the same three-column wheel ourselves.
 const TIME_INPUT_STEP_MINUTES = 5;
-const timePickers = new WeakMap();
+const IOS_WHEEL_REPEAT = 7;
+const timePickerList = [];
 
-// Pad a number to two digits for "HH:MM" time-input values.
 function pad2(n) {
   return String(n).padStart(2, "0");
 }
@@ -2186,15 +2195,13 @@ function roundTimeStringToStep(timeStr, stepMinutes = TIME_INPUT_STEP_MINUTES) {
   const minutes = Number(match[2]);
   if (hours > 23 || minutes > 59) return timeStr;
   const rounded = roundMinutesToStep(hours * 60 + minutes, stepMinutes);
-  const nextHours = Math.floor(rounded / 60);
-  const nextMinutes = rounded % 60;
-  return `${pad2(nextHours)}:${pad2(nextMinutes)}`;
+  return `${pad2(Math.floor(rounded / 60))}:${pad2(rounded % 60)}`;
 }
 
 function timeStringToPickerState(timeStr) {
   const rounded = roundTimeStringToStep(timeStr);
   const match = /^(\d{2}):(\d{2})$/.exec(rounded || "");
-  if (!match) return { hour: "", minute: "", period: "" };
+  if (!match) return { hour: "12", minute: "00", period: "am" };
   const h24 = Number(match[1]);
   const period = h24 >= 12 ? "pm" : "am";
   let hour12 = h24 % 12;
@@ -2213,21 +2220,222 @@ function pickerStateToTimeString(hour, minute, period) {
   return `${pad2(h24)}:${minute}`;
 }
 
-function addTimeSelectOption(select, value, label, i18nKey) {
-  const option = document.createElement("option");
-  option.value = value;
-  option.textContent = label;
-  if (i18nKey) option.setAttribute("data-i18n", i18nKey);
-  select.appendChild(option);
+function hourValues() {
+  return Array.from({ length: 12 }, (_, i) => String(i + 1));
 }
 
-function syncTimePickerFromInput(input) {
-  const picker = timePickers.get(input);
-  if (!picker) return;
-  const state = timeStringToPickerState(input.value);
-  picker.hourSel.value = state.hour;
-  picker.minSel.value = state.minute;
-  picker.periodSel.value = state.period;
+function minuteValues() {
+  const values = [];
+  for (let m = 0; m < 60; m += TIME_INPUT_STEP_MINUTES) {
+    values.push(pad2(m));
+  }
+  return values;
+}
+
+function periodLabels() {
+  return { am: t("time.periodAm"), pm: t("time.periodPm") };
+}
+
+function wheelItemHeight(col) {
+  const item = col.querySelector(".ios-wheel__item");
+  return item ? item.offsetHeight : 38;
+}
+
+function labelWheelItems(col, labelsByValue) {
+  col.querySelectorAll(".ios-wheel__item").forEach((item) => {
+    item.textContent = labelsByValue[item.dataset.value] ?? item.dataset.value;
+  });
+}
+
+function createWheelColumn(values, options) {
+  const col = document.createElement("div");
+  col.className = `ios-wheel ${options.className}`;
+  col.setAttribute("role", "listbox");
+  col.setAttribute("tabindex", "0");
+  col.setAttribute("data-i18n-aria", options.ariaKey);
+  col.setAttribute("aria-label", t(options.ariaKey));
+  col._values = values;
+  col._infinite = Boolean(options.infinite);
+
+  const padTop = document.createElement("div");
+  padTop.className = "ios-wheel__pad";
+  padTop.setAttribute("aria-hidden", "true");
+  col.appendChild(padTop);
+
+  const copies = col._infinite ? IOS_WHEEL_REPEAT : 1;
+  for (let copy = 0; copy < copies; copy += 1) {
+    values.forEach((value) => {
+      const item = document.createElement("div");
+      item.className = "ios-wheel__item";
+      item.dataset.value = value;
+      item.setAttribute("role", "option");
+      col.appendChild(item);
+    });
+  }
+
+  const padBottom = document.createElement("div");
+  padBottom.className = "ios-wheel__pad";
+  padBottom.setAttribute("aria-hidden", "true");
+  col.appendChild(padBottom);
+  return col;
+}
+
+function selectedValueFromWheel(col) {
+  const h = wheelItemHeight(col);
+  if (!h) return col._values[0];
+  const index = Math.max(0, Math.round(col.scrollTop / h));
+  return col._values[index % col._values.length];
+}
+
+function scrollWheelToValue(col, value) {
+  const values = col._values;
+  let offset = values.indexOf(value);
+  if (offset < 0) offset = 0;
+  const copy = col._infinite ? Math.floor(IOS_WHEEL_REPEAT / 2) : 0;
+  col.scrollTop = (copy * values.length + offset) * wheelItemHeight(col);
+}
+
+function normalizeInfiniteWheel(col) {
+  if (!col._infinite) return;
+  const h = wheelItemHeight(col);
+  if (!h) return;
+  const n = col._values.length;
+  const index = Math.max(0, Math.round(col.scrollTop / h));
+  const copy = Math.floor(index / n);
+  if (copy === 0 || copy === IOS_WHEEL_REPEAT - 1) {
+    const mid = Math.floor(IOS_WHEEL_REPEAT / 2);
+    col.scrollTop = (mid * n + (index % n)) * h;
+  }
+}
+
+function paintWheel(col) {
+  const items = col.querySelectorAll(".ios-wheel__item");
+  if (!items.length) return;
+  const mid = col.scrollTop + col.clientHeight / 2;
+  items.forEach((item) => {
+    const itemMid = item.offsetTop + item.offsetHeight / 2;
+    const dist = (itemMid - mid) / item.offsetHeight;
+    const clamped = Math.max(-4, Math.min(4, dist));
+    const abs = Math.abs(clamped);
+    item.style.transform = `rotateX(${clamped * -12}deg) scale(${1 - abs * 0.05})`;
+    item.style.opacity = String(Math.max(0.18, 1 - abs * 0.22));
+    item.classList.toggle("is-selected", abs < 0.5);
+  });
+}
+
+function updateTimeDisplay(picker) {
+  const value = picker.input.value;
+  picker.display.textContent = value ? formatTimeTo12Hour(value) : "";
+  picker.display.classList.toggle("is-empty", !value);
+}
+
+function readWheelsToTime(picker) {
+  return pickerStateToTimeString(
+    selectedValueFromWheel(picker.hourCol),
+    selectedValueFromWheel(picker.minCol),
+    selectedValueFromWheel(picker.periodCol)
+  );
+}
+
+function commitWheels(picker) {
+  const time = readWheelsToTime(picker);
+  if (picker.input.value === time) {
+    updateTimeDisplay(picker);
+    return;
+  }
+  picker.suspendSync = true;
+  picker.input.value = time;
+  updateTimeDisplay(picker);
+  picker.input.dispatchEvent(new Event("input", { bubbles: true }));
+  picker.suspendSync = false;
+}
+
+function scrollWheelsToInput(picker) {
+  const state = timeStringToPickerState(picker.input.value || "12:00");
+  scrollWheelToValue(picker.hourCol, state.hour);
+  scrollWheelToValue(picker.minCol, state.minute);
+  scrollWheelToValue(picker.periodCol, state.period);
+  paintWheel(picker.hourCol);
+  paintWheel(picker.minCol);
+  paintWheel(picker.periodCol);
+}
+
+function closeTimePicker(picker) {
+  if (!picker.open) return;
+  picker.open = false;
+  picker.panel.hidden = true;
+  picker.field.classList.remove("is-open");
+  picker.display.setAttribute("aria-expanded", "false");
+}
+
+function closeAllTimePickers(except) {
+  timePickerList.forEach((picker) => {
+    if (picker !== except) closeTimePicker(picker);
+  });
+}
+
+function openTimePicker(picker) {
+  if (picker.open) {
+    closeTimePicker(picker);
+    return;
+  }
+  closeAllTimePickers(picker);
+  picker.openedValue = picker.input.value;
+  picker.open = true;
+  picker.panel.hidden = false;
+  picker.field.classList.add("is-open");
+  picker.display.setAttribute("aria-expanded", "true");
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      scrollWheelsToInput(picker);
+    });
+  });
+}
+
+function bindWheel(picker, col) {
+  let settleTimer = null;
+  col.addEventListener(
+    "scroll",
+    () => {
+      paintWheel(col);
+      if (settleTimer) clearTimeout(settleTimer);
+      settleTimer = setTimeout(() => {
+        normalizeInfiniteWheel(col);
+        paintWheel(col);
+        commitWheels(picker);
+      }, 90);
+    },
+    { passive: true }
+  );
+  col.addEventListener("keydown", (event) => {
+    if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+    event.preventDefault();
+    const values = col._values;
+    const current = selectedValueFromWheel(col);
+    let idx = values.indexOf(current);
+    if (idx < 0) idx = 0;
+    idx = event.key === "ArrowDown" ? idx + 1 : idx - 1;
+    if (!col._infinite) {
+      idx = Math.max(0, Math.min(values.length - 1, idx));
+    } else {
+      idx = (idx + values.length) % values.length;
+    }
+    scrollWheelToValue(col, values[idx]);
+    paintWheel(col);
+    commitWheels(picker);
+  });
+}
+
+function refreshTimePickersI18n() {
+  timePickerList.forEach((picker) => {
+    picker.resetBtn.textContent = t("form.timeReset");
+    picker.doneBtn.textContent = t("form.timeDone");
+    labelWheelItems(picker.periodCol, periodLabels());
+    updateTimeDisplay(picker);
+    picker.hourCol.setAttribute("aria-label", t("form.hourAria"));
+    picker.minCol.setAttribute("aria-label", t("form.minuteAria"));
+    picker.periodCol.setAttribute("aria-label", t("form.periodAria"));
+  });
 }
 
 function setTimeInputValue(input, value) {
@@ -2238,101 +2446,148 @@ function setTimeInputValue(input, value) {
     const rounded = roundTimeStringToStep(value);
     input.value = /^\d{2}:\d{2}$/.test(rounded) ? rounded : "";
   }
-  syncTimePickerFromInput(input);
-}
-
-function createTimeSelect(className, ariaKey) {
-  const select = document.createElement("select");
-  select.className = `form-input time-picker__select ${className}`;
-  select.setAttribute("data-i18n-aria", ariaKey);
-  select.setAttribute("aria-label", t(ariaKey));
-  select.setAttribute("autocomplete", "off");
-  return select;
+  const picker = timePickerList.find((item) => item.input === input);
+  if (!picker || picker.suspendSync) return;
+  updateTimeDisplay(picker);
+  if (picker.open) scrollWheelsToInput(picker);
 }
 
 function upgradeTimeInput(input) {
-  if (!input || timePickers.has(input)) return;
-
-  const required = input.hasAttribute("required");
-  const wrapper = document.createElement("div");
-  wrapper.className = "time-picker";
-  wrapper.setAttribute("role", "group");
+  if (!input || timePickerList.some((item) => item.input === input)) return;
 
   const label = document.querySelector(`label[for="${input.id}"]`);
+  const field = input.closest(".form-field") || input.parentNode;
+  const row = input.parentNode;
+  field.classList.add("time-field");
+
+  const display = document.createElement("button");
+  display.type = "button";
+  display.className = "form-input time-display";
+  display.setAttribute("aria-haspopup", "true");
+  display.setAttribute("aria-expanded", "false");
+  const panelId = `${input.id}-picker`;
+  display.setAttribute("aria-controls", panelId);
+  display.id = `${input.id}-display`;
+  const fieldLabel = label ? label.textContent.trim() : "";
+  if (fieldLabel) display.setAttribute("aria-label", fieldLabel);
   if (label) {
     if (!label.id) label.id = `${input.id}-label`;
-    wrapper.setAttribute("aria-labelledby", label.id);
+    label.htmlFor = display.id;
   }
-
-  const hourSel = createTimeSelect("time-picker__hour", "form.hourAria");
-  hourSel.id = `${input.id}-hour`;
-  const minSel = createTimeSelect("time-picker__minute", "form.minuteAria");
-  minSel.id = `${input.id}-minute`;
-  const periodSel = createTimeSelect("time-picker__period", "form.periodAria");
-  periodSel.id = `${input.id}-period`;
-
-  if (!required) {
-    addTimeSelectOption(hourSel, "", t("form.timeNone"), "form.timeNone");
-    addTimeSelectOption(minSel, "", t("form.timeNone"), "form.timeNone");
-    addTimeSelectOption(periodSel, "", t("form.timeNone"), "form.timeNone");
-  }
-
-  for (let h = 1; h <= 12; h += 1) {
-    addTimeSelectOption(hourSel, String(h), String(h));
-  }
-  for (let m = 0; m < 60; m += TIME_INPUT_STEP_MINUTES) {
-    const value = pad2(m);
-    addTimeSelectOption(minSel, value, value);
-  }
-  addTimeSelectOption(periodSel, "am", t("time.am"), "time.am");
-  addTimeSelectOption(periodSel, "pm", t("time.pm"), "time.pm");
-
-  if (label) label.htmlFor = hourSel.id;
-
-  const colon = document.createElement("span");
-  colon.className = "time-picker__sep";
-  colon.setAttribute("aria-hidden", "true");
-  colon.textContent = ":";
 
   input.type = "hidden";
   input.classList.remove("form-input");
   input.removeAttribute("step");
-  input.parentNode.insertBefore(wrapper, input);
-  wrapper.append(input, hourSel, colon, minSel, periodSel);
+  row.insertBefore(display, row.querySelector(".now-btn"));
 
-  timePickers.set(input, { hourSel, minSel, periodSel, required });
-  syncTimePickerFromInput(input);
+  const panel = document.createElement("div");
+  panel.className = "ios-time-picker";
+  panel.id = panelId;
+  panel.hidden = true;
 
-  const onPickerChange = (changedSelect) => {
-    if (!required && changedSelect.value === "") {
-      hourSel.value = "";
-      minSel.value = "";
-      periodSel.value = "";
-    } else {
-      if (!hourSel.value) hourSel.value = "12";
-      if (!minSel.value) minSel.value = "00";
-      if (!periodSel.value) periodSel.value = "am";
-    }
-    input.value = pickerStateToTimeString(hourSel.value, minSel.value, periodSel.value);
-    input.dispatchEvent(new Event("input", { bubbles: true }));
-    input.dispatchEvent(new Event("change", { bubbles: true }));
+  const wheels = document.createElement("div");
+  wheels.className = "ios-time-picker__wheels";
+
+  const highlight = document.createElement("div");
+  highlight.className = "ios-time-picker__highlight";
+  highlight.setAttribute("aria-hidden", "true");
+
+  const hourCol = createWheelColumn(hourValues(), {
+    ariaKey: "form.hourAria",
+    infinite: true,
+    className: "ios-wheel--hour",
+  });
+  labelWheelItems(hourCol, Object.fromEntries(hourValues().map((h) => [h, h])));
+
+  const minCol = createWheelColumn(minuteValues(), {
+    ariaKey: "form.minuteAria",
+    infinite: true,
+    className: "ios-wheel--minute",
+  });
+  labelWheelItems(minCol, Object.fromEntries(minuteValues().map((m) => [m, m])));
+
+  const periodCol = createWheelColumn(["am", "pm"], {
+    ariaKey: "form.periodAria",
+    infinite: false,
+    className: "ios-wheel--period",
+  });
+  labelWheelItems(periodCol, periodLabels());
+
+  wheels.append(highlight, hourCol, minCol, periodCol);
+
+  const actions = document.createElement("div");
+  actions.className = "ios-time-picker__actions";
+
+  const resetBtn = document.createElement("button");
+  resetBtn.type = "button";
+  resetBtn.className = "ios-time-picker__reset";
+  resetBtn.setAttribute("data-i18n", "form.timeReset");
+  resetBtn.textContent = t("form.timeReset");
+
+  const doneBtn = document.createElement("button");
+  doneBtn.type = "button";
+  doneBtn.className = "ios-time-picker__done";
+  doneBtn.setAttribute("data-i18n", "form.timeDone");
+  doneBtn.textContent = t("form.timeDone");
+
+  actions.append(resetBtn, doneBtn);
+  panel.append(wheels, actions);
+  field.appendChild(panel);
+
+  const picker = {
+    input,
+    field,
+    display,
+    panel,
+    hourCol,
+    minCol,
+    periodCol,
+    resetBtn,
+    doneBtn,
+    open: false,
+    openedValue: "",
+    suspendSync: false,
   };
+  timePickerList.push(picker);
 
-  hourSel.addEventListener("change", () => onPickerChange(hourSel));
-  minSel.addEventListener("change", () => onPickerChange(minSel));
-  periodSel.addEventListener("change", () => onPickerChange(periodSel));
+  display.addEventListener("click", () => openTimePicker(picker));
+  doneBtn.addEventListener("click", () => {
+    commitWheels(picker);
+    closeTimePicker(picker);
+    display.focus();
+  });
+  resetBtn.addEventListener("click", () => {
+    picker.suspendSync = true;
+    picker.input.value = picker.openedValue;
+    picker.suspendSync = false;
+    updateTimeDisplay(picker);
+    scrollWheelsToInput(picker);
+    picker.input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+
+  bindWheel(picker, hourCol);
+  bindWheel(picker, minCol);
+  bindWheel(picker, periodCol);
+  updateTimeDisplay(picker);
 }
 
 function upgradeTimeInputs(inputs) {
   inputs.forEach((input) => upgradeTimeInput(input));
+  if (upgradeTimeInputs._docBound) return;
+  upgradeTimeInputs._docBound = true;
+  document.addEventListener("click", (event) => {
+    if (event.target.closest(".time-field")) return;
+    closeAllTimePickers();
+  });
 }
 
 function snapTimeInputToStep(input) {
   if (!input || !input.value) return;
-  setTimeInputValue(input, input.value);
+  const rounded = roundTimeStringToStep(input.value);
+  if (rounded === input.value) return;
+  setTimeInputValue(input, rounded);
 }
 
-// Fill a time field with the current clock time and refresh the live total.
 function setTimeFieldToNow(input) {
   if (!input) return;
   const now = new Date();
